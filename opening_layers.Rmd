@@ -1,0 +1,337 @@
+---
+title: "creating_CA_layers"
+output: html_document
+---
+
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
+library(raster) ### NOTE: attach this BEFORE tidyverse
+library(rgdal)
+library(tidyverse)
+library(here)
+library(sf) # simple features package (for shapefiles)
+```
+
+---------------------------------------------------------------------------------------
+
+```{r}
+#----- CA shapefile ------
+ca_shp <- readOGR(here("shapefiles",
+                       "ca-state-boundary",
+                       "CA_State_TIGER2016.shp"))
+
+```
+
+---------------------------------------------------------------------------------------
+
+# World_ELU_2015.tif
+
+ELU = ecological land units
+
+https://www.esri.com/~/media/Files/Pdfs/library/whitepapers/pdfs/introducing-the-global-elu.pdf
+
+https://www.arcgis.com/home/item.html?id=77bbcb86d5eb48a8adb084d499c1f7ef
+
+https://www.esri.com/about/newsroom/insider/updated-map-features-global-ecology-in-unprecedented-detail/
+
+```{r}
+GDALinfo(here("raw_data","World_ELU_2015.tif"))
+
+world_elu <- raster(here("World_ELU_2015.tif"))
+plot(world_elu)
+```
+
+---------------------------------------------------------------------------------------
+
+https://onlinelibrary.wiley.com/doi/10.1111/tgis.12265
+
+```{r}
+# ----- Wolrd Landform raster
+GDALinfo(here("raw_data",
+              "GlobalMountainsK3Classes",
+              "k3classes.tif"))
+k3_mountains <- raster(here("raw_data",
+              "GlobalMountainsK3Classes",
+              "k3classes.tif"))
+
+# ---- CA landform map ----
+
+ca_shp <- spTransform(ca_shp, crs(k3_mountains))
+
+ca_landform <- mask(crop(x= k3_mountains, y=st_bbox(ca_shp)), ca_shp)
+
+plot(ca_landform)
+
+# landforms = 26, 27, 31, 32
+unique(ca_landform)  
+
+# writeRaster(ca_landform, filename=here("ca_subsets",
+#                                        "landforms",
+#                                        "ca_landforms.tif")  )
+```
+
+
+```{r}
+# --- free memory
+rm(k3_mountains, ca_landform)
+```
+
+---------------------------------------------------------------------------------------
+
+
+# World Moisture Domains (aridity index)
+
+https://cgiarcsi.community/2019/01/24/global-aridity-index-and-potential-evapotranspiration-climate-database-v2/
+
+https://figshare.com/articles/dataset/Global_Aridity_Index_and_Potential_Evapotranspiration_ET0_Climate_Database_v2/7504448/3
+
+
+```{r}
+# ----- Aridity Index
+GDALinfo(here("raw_data",
+              "AridityIndex",
+              "ai_et0",
+              "ai_et0.tif"))
+
+aridity_index <- raster(here("raw_data",
+              "AridityIndex",
+              "ai_et0",
+              "ai_et0.tif"))
+ca_shp <- spTransform(ca_shp, crs(aridity_index))
+
+# two-step cropping
+ca_aridity_index <- mask(crop(x= aridity_index, y=st_bbox(ca_shp)),
+                         ca_shp)
+plot(ca_aridity_index)
+writeRaster(ca_aridity_index, filename=here("ca_subsets",
+                                       "aridity",
+                                       "ca_aridity_index.tif")  )
+```
+
+
+```{r}
+# reclassify values into three groups: 
+# 1 = desert => AI < 0.05
+# 2 = dry => 0.05 <= AI <= 0.65
+# 3 = moist => 0.65 < AI
+# https://www.rdocumentation.org/packages/raster/versions/3.5-2/topics/reclassify
+# min, max, new_value
+m <- c(0, 500 , 1,  
+       500, 6500, 2,  
+       6500, 23000, 3)
+thresh <- matrix(m, ncol=3, byrow=TRUE)
+
+
+ca_aridity_regions <- reclassify(ca_aridity_index,thresh)  # double check open/closed intervals
+rm(m)
+rm(thresh)
+
+plot(ca_aridity_regions)
+# writeRaster(ca_aridity_regions, filename=here("ca_subsets",
+#                                               "aridity",
+#                                               "ca_aridity_regions.tif")  )
+```
+
+
+```{r}
+# clean memory
+rm(aridity_index, ca_aridity_index, ca_aridity_regions)
+```
+
+
+---------------------------------------------------------------------------------------
+
+# WorldClim data
+
+https://www.worldclim.org/data/worldclim21.html
+
+```{r}
+
+GDALinfo(here("raw_data",
+              "wc2",
+              "wc2.1_30s_tavg_1.tif"))
+wc2_1 <- raster(here("raw_data",
+                     "wc2",
+                     "wc2.1_30s_tavg_1.tif"))
+ca_shp <- spTransform(ca_shp, crs(wc2_1))
+rm(wc2_1)
+
+#----- clipping and writing monthly rasters
+# for(i in c(1:12)){
+#   file <- paste("wc2.1_30s_tavg_",i,".tif", sep="")
+#   weather <- raster(here("raw_data","wc2",file))
+#   ca_weather <- mask(crop(x= weather, y=st_bbox(ca_shp)),ca_shp)
+#   file <- paste("ca_avg_temp_",i,".tif",sep="")
+#   writeRaster(ca_weather, filename=here("ca_subsets","avg_temp_month",file)  )
+# }
+# --- free memory ---
+rm(weather, i, file, ca_weather)
+```
+
+
+
+```{r}
+# ----- READ IN RASTER FILES AS STACK -----
+raster_files <-list.files(path = here("ca_subsets",
+                                      "avg_temp_month"), 
+                          full.names = TRUE)
+
+months_weather <- raster::stack(raster_files)
+rm(raster_files)
+plot(months_weather)
+```
+
+```{r}
+#avg across 1970 -2000
+avg_temp <- mean(months_weather)
+plot(avg_temp)
+#writeRaster(avg_temp, filename=here("ca_subsets","avg_temp_30years","ca_30yr_avg_temp.tif"))
+```
+
+```{r}
+# -inf, 0) and every month avg<10: polar   (1)
+# -inf, 0): boreal                         (2)
+#  [0,10) : cold temperate                 (3)
+#  [10,18) : warm temperate                (4)
+#  [18,24) : subtropical                   (5)
+#  [24,34) : tropical                      (6)
+
+
+thresh<- matrix( c(-Inf, 0, 1, # this will be splot into polar (1) and boreal (2)
+                  0, 10 , 3,
+                  10,18 , 4,
+                  18,24 , 5,
+                  24,43 , 6),
+                 nrow=5,
+                 byrow=TRUE) 
+
+temp_regions <- reclassify(avg_temp,thresh, right=FALSE) # a<= raster <b
+rm(avg_temp)
+rm(thresh)
+
+#plot(temp_regions)
+```
+
+```{r}
+# separate polar and boreal
+polar_boreal <- temp_regions
+polar_boreal[polar_boreal!=1] <- NA
+
+months_boreal = polar_boreal*months_weather
+
+# choosing months with possible boreal regions
+drop <- c()
+for (i in 1:12){
+  # if all temps on that month are <10, then no data for boreal
+  if(maxValue(months_boreal[[i]]) <10){ 
+    drop <- c(drop,i)
+  }
+}
+rm(i)
+months_boreal <- dropLayer(months_boreal, drop)
+rm(drop)
+
+boreal_region <- months_boreal >= 10
+#boreal_region <- sum(months_boreal)  # if more than one layer in months_boreal
+#boreal_region[boreal_region>0] <- 1
+boreal_region[is.na(boreal_region) == TRUE] <- 0 # so you don't have NA + 0 adding the raster layers
+
+temp_regions <- temp_regions + boreal_region
+writeRaster(temp_regions, filename=here("ca_subsets","avg_temp_30years","ca_30yr_temp_regions.tif"))
+```
+
+```{r}
+plot(temp_regions)
+plot(temp_regions==1)
+plot(temp_regions<=2)
+plot(temp_regions<=3)
+plot(temp_regions<=4)
+plot(temp_regions<=5)
+```
+
+```{r}
+rm(boreal_region, avg_temp, months_boreal, months_weather, polar_boreal, temp_regions)
+```
+
+
+---------------------------------------------------------------------------------------
+
+# Landcover
+
+https://www.mrlc.gov/data?f%5B0%5D=year%3A2008
+
+Legends:
+https://www.mrlc.gov/data/legends/national-land-cover-database-2019-nlcd2019-legend
+
+
+```{r}
+# ----- Land Cover
+GDALinfo(here("raw_data",
+              "nlcd_2008_land_cover_l48_20210604",
+              "nlcd_2008_land_cover_l48_20210604.img"))
+
+land_cover <- raster(here("raw_data",
+              "nlcd_2008_land_cover_l48_20210604",
+              "nlcd_2008_land_cover_l48_20210604.img"))
+
+ca_shp <- spTransform(ca_shp, crs(land_cover))
+
+# two-step cropping
+# takes a while to mask
+ca_land_cover <- mask(crop(x= land_cover, y=st_bbox(ca_shp)),ca_shp)
+plot(ca_land_cover)
+#writeRaster(ca_land_cover, filename=here(ca_subsets","landcover","ca_land_cover_2008.tif")  )
+ca_land_cover <- raster(here("ca_subsets","ca_land_cover_2008.tif"))
+```
+
+
+```{r}
+# 11 : open water
+# 12 : perennial ice/snow
+# 21-24 : developed
+# 31 : barren
+# 41-43 : forest
+# 51,52 : shrubland
+# 71-74 : grassland
+# 81,82: cropland
+# 90,95: wetland
+  
+
+
+thresh<- cbind( c(1:9)*10, c(2:10)*10, c(1:9)) 
+thresh[1,1] <-12
+
+ca_lc_regions <- ca_land_cover
+ca_lc_regions[ca_lc_regions == 11] <- 10
+
+ca_water_10 <- ca_lc_regions
+
+ca_lc_regions <- reclassify(ca_water_10,thresh, right=FALSE)
+unique(ca_lc_regions)
+plot(ca_lc_regions)
+#writeRaster(ca_lc_regions, filename=here("ca_subsets","landcover","ca_landcover_regions.tif")  )
+```
+
+
+```{r}
+# Experiments to figure out reclassify
+
+# m<- matrix(c(0,0,0,
+#   10,11,20), nrow=3)
+# r <- raster(m)
+# 
+# new_r <- reclassify(r, thresh, right=NA) #a< raster <=b
+# newer_r <-reclassify(r, thresh) #a< raster <= b
+# newer2 <- reclassify(r, thresh, right=FALSE) # a<= raster <b
+# plot(r)
+# plot(new_r)
+# plot(newer_r)
+# plot(newer2)
+# 
+# forest <- mask(ca_lc_regions, ca_lc_regions == 4, maskvalue=F)
+# plot(forest)
+```
+
+
+
