@@ -1,0 +1,40 @@
+---
+title: "sb_ecosystems"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(raster)
+library(rgdal)
+library(tidyverse)
+library(here)
+library(sf)
+```
+
+```{r}
+sb_shp <- readOGR(here("shapefiles",
+                       "sb-county-boundary",
+                       "data",
+                       "commondata",
+                       "county_boundaries",
+                       "SB_only.shp"))
+
+aridity <- raster(here("ca_subsets","aridity","ca_aridity_regions.tif"))
+temp <- raster(here("ca_subsets","avg_temp_30years","ca_30yr_temp_regions.tif"))
+landforms <- raster(here("ca_subsets","landforms","ca_landforms.tif"))
+landcover <- raster(here("ca_subsets","landcover","ca_landcover_regions.tif"))
+
+
+sb_shp <- spTransform(sb_shp, crs(aridity))
+sb_bbox <-st_bbox(sb_shp)
+
+aridity <- mask(crop(x= aridity, y=sb_bbox), sb_shp)
+temp <- mask(crop(x= temp, y=sb_bbox), sb_shp)
+landforms <- mask(crop(x= landforms, y=sb_bbox), sb_shp)
+rm(sb_bbox)
+
+sb_shp <- spTransform(sb_shp, crs(landcover))
+landcover <- mask(crop(x=landcover, y = st_bbox(sb_shp)),sb_shp)
+```
+
