@@ -1,0 +1,92 @@
+---
+title: "comparing_SB_landcovers"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(rgdal)
+library(tidyverse)
+library(here)
+library(sf)
+```
+
+
+```{r}
+
+lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
+lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
+
+```
+
+
+
+
+```{r}
+
+changes <- seq(i-1,i-10,by=-1)
+
+
+```{r}
+# --- comparing 2008 and 2019 ---
+
+change <- (lc_2008 - lc_2019)
+
+plot(change)
+unique(change)
+```
+
+
+```{r}
+
+subset <- lc_2008
+i=2
+subset[subset!=i] <- NA
+#plot(subset)
+
+change <- subset - lc_2019
+
+df1 <- data.frame(freq(change)) %>% 
+  filter(is.na(value)==FALSE)
+
+value <- setdiff( seq(i-1,i-10,by=-1) ,df1[,1])
+count <- rep(0,each=length(value))
+df2 <- data.frame(value,count)
+rm(value,count)
+
+all_change <- bind_rows(df1,df2) %>% 
+  arrange(desc(value))
+all_change[,1]
+```
+
+
+
+```{r}
+change_ij <- function(rasterA,rasterB,i,j){
+  A_i <- rasterA
+  A_i[A_i!=i] <- NA
+  change = A_i - rasterB
+  
+  subset <- lc_2008
+  i=2
+  subset[subset!=i] <- NA
+  #plot(subset)
+  
+  change <- subset - lc_2019
+  
+  df1 <- data.frame(freq(change)) %>% 
+    filter(is.na(value)==FALSE)
+  
+  value <- setdiff( seq(i-1,i-10,by=-1) ,df1[,1])
+  count <- rep(0,each=length(value))
+  df2 <- data.frame(value,count)
+  rm(value,count)
+  
+  all_change <- bind_rows(df1,df2) %>% 
+    arrange(desc(value))
+  all_change[,1]
+}
+```
+
