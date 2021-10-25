@@ -48,11 +48,31 @@ landforms <- projectRaster(from = landforms, to= landcover, method='ngb')
 
 # writeRaster(aridity, filename=here("sb_layers","sb_aridity.tif"))
 # writeRaster(temp, filename=here("sb_layers","sb_temp.tif"))
-# writeRaster(landforms, filename=here("sb_layers","sb_landforms.tif"))
 # writeRaster(landcover, filename=here("sb_layers","sb_landcover.tif"))
+```
+
+```{r}
+# relabeling landforms raster. 
+
+plot(landforms)
+unique(landforms)
+
+thresh<- matrix(c(26,1,
+                  27,2,
+                  31,3,
+                  32,4), nrow=4,byrow=TRUE)
+landforms <- reclassify(landforms,thresh) 
+rm(thresh)
+
+unique(landforms)
+plot(landforms)
+
+writeRaster(landforms, filename=here("sb_layers","sb_landforms.tif"))
+
 ```
 
 ```{r}
 
 ```
+
 
