@@ -88,4 +88,12 @@ change_i(lc_2008,lc_2019,2)
 
 
 
+```{r}
+
+change_mtx <- matrix(NA, 10, 10)  ## set up a `5 * length(s)` matrix
+for (i in 1:10) {
+  ## fill i-th row of the matrix
+  change_mtx[i,] <- change_i(lc_2008,lc_2019,i)
+  }
+```
 

@@ -44,13 +44,3 @@ unique(ecos_2008)
 unique(ecos_2019)
 ```
 
-
-```{r}
-# --- comparing 2008 and 2019 ---
-
-change <- ecos_2008 - ecos_2019
-
-plot(change)
-unique(change)
-```
-
