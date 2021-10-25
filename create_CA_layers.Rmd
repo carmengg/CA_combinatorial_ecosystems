@@ -257,7 +257,7 @@ rm(boreal_region, avg_temp, months_boreal, months_weather, polar_boreal, temp_re
 
 ---------------------------------------------------------------------------------------
 
-# Landcover
+# Landcover (2008 and 2019)
 
 https://www.mrlc.gov/data?f%5B0%5D=year%3A2008
 
@@ -333,5 +333,40 @@ plot(ca_lc_regions)
 # plot(forest)
 ```
 
+```{r}
+# ---- landcover prep functions ----
+
+crop_shape <- function(ref_raster , shape){
+  new_shape <- spTransform(shape, crs(ref_raster))
+  return(mask(crop(x= ref_raster, y=st_bbox(new_shape)),new_shape))
+}
+
+
+landcover_regions <- function(lc_raster){
+  thresh<- cbind( c(1:9)*10, c(2:10)*10, c(1:9)) 
+  thresh[1,1] <-12
+
+  new_raster <- lc_raster
+  new_raster[new_raster == 11] <- 10
+
+  return(reclassify(new_raster,thresh, right=FALSE))
+}
+
+```
+
+
+```{r}
+lc_2019 <- raster(here("raw_data",
+              "nlcd_2019_land_cover_l48_20210604",
+              "nlcd_2019_land_cover_l48_20210604.img"))
+
+ca_shp <- spTransform(ca_shp, crs(lc_2019))
+ca_lc_2019 <- crop_shape(lc_2019,ca_shp)
+
+writeRaster(ca_lc_2019, filename=here("ca_subsets","landcover","ca_landcover_2019.tif"))
+
+ca_lc_regions_2019 <- landcover_regions(ca_lc_2019)
+writeRaster(ca_lc_regions_2019, filename=here("ca_subsets","landcover","ca_landcover_regions_2019.tif"))
+```
 
 
