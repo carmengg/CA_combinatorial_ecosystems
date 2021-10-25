@@ -67,12 +67,21 @@ rm(thresh)
 unique(landforms)
 plot(landforms)
 
-writeRaster(landforms, filename=here("sb_layers","sb_landforms.tif"))
+#writeRaster(landforms, filename=here("sb_layers","sb_landforms.tif"))
 
 ```
 
 ```{r}
+# ----- USGS SB ecosystems -----
 
+usgs_ecos <- raster(here('ca_subsets','usgs_ecosystems_2009','usgs_ca_ecos.tif'))
+sb_shp <- spTransform(sb_shp, crs(usgs_ecos))
+
+usgs_ecos <-  mask(crop(x= usgs_ecos, y=st_bbox(sb_shp)), sb_shp)
+#plot(usgs_ecos)
+usgs_ecos <- projectRaster(from = usgs_ecos, to= landcover, method='ngb')
+#plot(usgs_ecos)
+writeRaster(usgs_ecos, filename=here("sb_layers","sb_usgs_ecos.tif"))
 ```
 
 
