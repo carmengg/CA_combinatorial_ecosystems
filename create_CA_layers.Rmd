@@ -198,7 +198,7 @@ plot(avg_temp)
 #  [24,34) : tropical                      (6)
 
 
-thresh<- matrix( c(-Inf, 0, 1, # this will be splot into polar (1) and boreal (2)
+thresh<- matrix( c(-Inf, 0, 1, # this will be split into polar (1) and boreal (2)
                   0, 10 , 3,
                   10,18 , 4,
                   18,24 , 5,
@@ -287,15 +287,15 @@ ca_land_cover <- raster(here("ca_subsets","ca_land_cover_2008.tif"))
 
 
 ```{r}
-# 11 : open water
-# 12 : perennial ice/snow
-# 21-24 : developed
-# 31 : barren
-# 41-43 : forest
-# 51,52 : shrubland
-# 71-74 : grassland
-# 81,82: cropland
-# 90,95: wetland
+# 11 : open water          (10)
+# 12 : perennial ice/snow  (1)
+# 21-24 : developed        (2)
+# 31 : barren              (3)
+# 41-43 : forest           (4)
+# 51,52 : shrubland        (5)
+# 71-74 : grassland        (7)
+# 81,82: cropland          (8)
+# 90,95: wetland           (9)
   
 
 

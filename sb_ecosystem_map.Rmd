@@ -12,3 +12,29 @@ library(tidyverse)
 library(here)
 library(sf)
 ```
+
+
+```{r}
+aridity <- raster(here("sb_layers","sb_aridity.tif"))
+temp <- raster(here("sb_layers","sb_temp.tif"))
+landforms <- raster(here("sb_layers","sb_landforms.tif"))
+landcover <- raster(here("sb_layers","sb_landcover.tif"))
+
+```
+
+```{r}
+# relabeling landforms raster. 
+
+plot(landforms)
+unique(landforms)
+
+thresh<- matrix(c(26,1,
+                  27,2,
+                  31,3,
+                  32,4), nrow=4,byrow=TRUE)
+landforms <- reclassify(landforms,thresh) 
+
+unique(landforms)
+plot(landforms)
+```
+
