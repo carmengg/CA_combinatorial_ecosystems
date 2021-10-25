@@ -1,0 +1,14 @@
+---
+title: "sb_ecosystems_map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(rgdal)
+library(tidyverse)
+library(here)
+library(sf)
+```
