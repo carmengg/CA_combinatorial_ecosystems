@@ -20,12 +20,13 @@ sb_shp <- readOGR(here("shapefiles",
                        "county_boundaries",
                        "SB_only.shp"))
 
+# --- open rasters ---
 aridity <- raster(here("ca_subsets","aridity","ca_aridity_regions.tif"))
 temp <- raster(here("ca_subsets","avg_temp_30years","ca_30yr_temp_regions.tif"))
 landforms <- raster(here("ca_subsets","landforms","ca_landforms.tif"))
 landcover <- raster(here("ca_subsets","landcover","ca_landcover_regions.tif"))
 
-
+# --- clip rasters ---
 sb_shp <- spTransform(sb_shp, crs(aridity))
 sb_bbox <-st_bbox(sb_shp)
 
@@ -40,14 +41,18 @@ landcover <- mask(crop(x=landcover, y = st_bbox(sb_shp)),sb_shp)
 
 
 ```{r}
+# --- match rasters ---
 aridity <- projectRaster(from = aridity, to= landcover, method='ngb')
 temp <- projectRaster(from = temp, to= landcover, method='ngb')
 landforms <- projectRaster(from = landforms, to= landcover, method='ngb')
 
-writeRaster(aridity, filename=here("sb_layers","sb_aridity.tif"))
-writeRaster(avg_temp, filename=here("sb_layers","sb_temp.tif"))
-writeRaster(landforms, filename=here("sb_layers","sb_landforms.tif"))
-writeRaster(landcover, filename=here("sb_layers","sb_landcover.tif"))
+# writeRaster(aridity, filename=here("sb_layers","sb_aridity.tif"))
+# writeRaster(temp, filename=here("sb_layers","sb_temp.tif"))
+# writeRaster(landforms, filename=here("sb_layers","sb_landforms.tif"))
+# writeRaster(landcover, filename=here("sb_layers","sb_landcover.tif"))
 ```
 
+```{r}
+
+```
 
