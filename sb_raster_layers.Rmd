@@ -84,4 +84,13 @@ usgs_ecos <- projectRaster(from = usgs_ecos, to= landcover, method='ngb')
 writeRaster(usgs_ecos, filename=here("sb_layers","sb_usgs_ecos.tif"))
 ```
 
+```{r}
+# ------  2019 landcover layer -----
+lc_2019 <- raster(here("ca_subsets","landcover","ca_landcover_regions_2019.tif"))
+
+sb_shp <- spTransform(sb_shp, crs(lc_2019))
+lc_2019 <- mask(crop(x=lc_2019, y = st_bbox(sb_shp)),sb_shp)
+
+writeRaster(lc_2019, filename=here("sb_layers","sb_landcover_2019.tif"))
+```
 
