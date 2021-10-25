@@ -58,23 +58,16 @@ rm(value,count)
 
 all_change <- bind_rows(df1,df2) %>% 
   arrange(desc(value))
-all_change[,1]
+all_change[,2]
 ```
 
 
 
 ```{r}
-change_ij <- function(rasterA,rasterB,i,j){
-  A_i <- rasterA
-  A_i[A_i!=i] <- NA
-  change = A_i - rasterB
-  
-  subset <- lc_2008
-  i=2
-  subset[subset!=i] <- NA
-  #plot(subset)
-  
-  change <- subset - lc_2019
+change_i <- function(rasterA,rasterB,i){
+  change <- rasterA
+  change[change!=i] <- NA
+  change <- change - rasterB
   
   df1 <- data.frame(freq(change)) %>% 
     filter(is.na(value)==FALSE)
@@ -86,7 +79,13 @@ change_ij <- function(rasterA,rasterB,i,j){
   
   all_change <- bind_rows(df1,df2) %>% 
     arrange(desc(value))
-  all_change[,1]
+  return(all_change[,2])
 }
+
+change_i(lc_2008,lc_2019,2)
+
 ```
+
+
+
 
