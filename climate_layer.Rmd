@@ -13,11 +13,10 @@ library(sf) # simple features package (for shapefiles)
 
 
 ```{r}
-fp <- here("raw_data","world_clim_historical_monthly_data",
+temp <- raster(here("raw_data","world_clim_historical_monthly_data",
                         "max_avg_temp",
                         "wc2.1_2.5m_tmax_1970-1979",
-                         "wc2.1_2.5m_tmax_1970-01.tif")
-temp <- raster(fp)
+                         "wc2.1_2.5m_tmax_1970-01.tif"))
 #plot(temp)
 
 #----- CA shapefile ------
@@ -27,7 +26,6 @@ ca_shp <- readOGR(here("shapefiles",
 ca_shp <- spTransform(ca_shp, crs(temp))
 
 rm(temp)
-rm(shp)
 ```
 
 
@@ -43,7 +41,7 @@ file_name <- function(tminmax,year,i){
 }
 
 #----- generate folder name
-folder <- function(tminmax,year){
+folder_name <- function(tminmax,year){
   decade <- year - (year%%10)
   folder <- paste("wc2.1_2.5m_",tminmax,"_",decade,"-",decade+9,sep="")
   return(folder)
@@ -51,24 +49,27 @@ folder <- function(tminmax,year){
 
 
 #----- clipping and writing monthly rasters
-yearly_avg <- function(year){
+yearly_avg <- function(year,bbox){
   months <- stack()
   for(i in c(1:12)){
      month_rast <- raster(here("raw_data",
                                "world_clim_historical_monthly_data",
                                "min_avg_temp",
-                               folder("tmin",year),
+                               folder_name("tmin",year),
                                file_name("tmin",year,i)))
-    months[[i]] <- mask(crop(x= month_rast, y=st_bbox(ca_shp)),ca_shp)
+     month_rast <- crop(x= month_rast, y=bbox)
+     months <- addLayer(months,month_rast)
   }
-  # for(i in c(1:12)){
-  #    month_rast <- raster(here("raw_data",
-  #                              "world_clim_historical_monthly_data",
-  #                              "max_avg_temp",
-  #                               folder("tmax",year),
-  #                              file_name("tmax",year,i)))
-  #   months[[i+12]] <- mask(crop(x= month_rast, y=st_bbox(ca_shp)),ca_shp)
-  # }
+  for(i in c(1:12)){
+     month_rast <- raster(here("raw_data",
+                               "world_clim_historical_monthly_data",
+                               "max_avg_temp",
+                               folder_name("tmax",year),
+                               file_name("tmax",year,i)))
+     month_rast <- crop(x= month_rast, y=bbox)
+     months <- addLayer(months,month_rast)
+  }
+  return(mean(moths))
 }
 ```
 
@@ -82,12 +83,12 @@ for(i in c(1:12)){
    month_rast <- raster(here("raw_data",
                              "world_clim_historical_monthly_data",
                              "min_avg_temp",
-                             folder("tmin",year),
+                             folder_name("tmin",year),
                              file_name("tmin",year,i)))
-   print(i)
-   months[[i]] <- crop(x= month_rast, y=st_bbox(ca_bbox))
+   month_rast <- crop(x= month_rast, y=ca_bbox)
+   months <- addLayer(months,month_rast)
 }
-
+mean(months)
 
 ```
 
