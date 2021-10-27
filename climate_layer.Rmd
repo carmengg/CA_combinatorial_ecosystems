@@ -9,6 +9,7 @@ library(tidyverse)
 library(here)
 library(sf) # simple features package (for shapefiles)
 
+library(tictoc)
 ```
 
 
@@ -69,8 +70,36 @@ yearly_avg <- function(year,bbox){
      month_rast <- crop(x= month_rast, y=bbox)
      months <- addLayer(months,month_rast)
   }
-  return(mean(moths))
+  return(mean(months))
 }
+
+#------ create average over decade
+# calculate avg temperature over 30 years before year
+# ex: year= 2001, then average over [2000,1991,1990,1981,1980,1971]
+decade_avg <- function(year,bbox){
+  years <- stack()
+  for( i in c((year-30):(year-1))){
+    years<- addLayer(years, yearly_avg(i,bbox))
+  }
+  return(mean(years))
+}
+
+tic("decade avg")
+decade_avg(2001,bbox)
+toc()
+```
+
+
+```{r}
+year<-2000
+bbox <- st_bbox(ca_shp)
+i <- 1
+
+tic("create 1 year avg")
+folder_name("tmin",year)
+year_avg_temp <- yearly_avg(year,bbox)
+toc()  # ~4 sec
+
 ```
 
 
