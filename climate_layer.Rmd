@@ -1,0 +1,94 @@
+---
+title: "climate_layer"
+output: html_document
+---
+```{r}
+library(raster)
+library(rgdal)
+library(tidyverse)
+library(here)
+library(sf) # simple features package (for shapefiles)
+
+```
+
+
+```{r}
+fp <- here("raw_data","world_clim_historical_monthly_data",
+                        "max_avg_temp",
+                        "wc2.1_2.5m_tmax_1970-1979",
+                         "wc2.1_2.5m_tmax_1970-01.tif")
+temp <- raster(fp)
+#plot(temp)
+
+#----- CA shapefile ------
+ca_shp <- readOGR(here("shapefiles",
+                       "ca-state-boundary",
+                       "CA_State_TIGER2016.shp"))
+ca_shp <- spTransform(ca_shp, crs(temp))
+
+rm(temp)
+rm(shp)
+```
+
+
+```{r}
+#----- generate file name
+file_name <- function(tminmax,year,i){
+  file <- paste("wc2.1_2.5m_",tminmax,"_",year,"-", sep="")
+  if(i<10){
+    file <- paste(file,'0',sep="")
+  }
+  file <- paste(file,i,".tif",sep="")
+  return(file)
+}
+
+#----- generate folder name
+folder <- function(tminmax,year){
+  decade <- year - (year%%10)
+  folder <- paste("wc2.1_2.5m_",tminmax,"_",decade,"-",decade+9,sep="")
+  return(folder)
+}
+
+
+#----- clipping and writing monthly rasters
+yearly_avg <- function(year){
+  months <- stack()
+  for(i in c(1:12)){
+     month_rast <- raster(here("raw_data",
+                               "world_clim_historical_monthly_data",
+                               "min_avg_temp",
+                               folder("tmin",year),
+                               file_name("tmin",year,i)))
+    months[[i]] <- mask(crop(x= month_rast, y=st_bbox(ca_shp)),ca_shp)
+  }
+  # for(i in c(1:12)){
+  #    month_rast <- raster(here("raw_data",
+  #                              "world_clim_historical_monthly_data",
+  #                              "max_avg_temp",
+  #                               folder("tmax",year),
+  #                              file_name("tmax",year,i)))
+  #   months[[i+12]] <- mask(crop(x= month_rast, y=st_bbox(ca_shp)),ca_shp)
+  # }
+}
+```
+
+
+
+```{r}
+year<- 1970
+months <- stack()
+ca_bbox <- st_bbox(ca_shp)
+for(i in c(1:12)){
+   month_rast <- raster(here("raw_data",
+                             "world_clim_historical_monthly_data",
+                             "min_avg_temp",
+                             folder("tmin",year),
+                             file_name("tmin",year,i)))
+   print(i)
+   months[[i]] <- crop(x= month_rast, y=st_bbox(ca_bbox))
+}
+
+
+```
+
+
