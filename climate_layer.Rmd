@@ -84,41 +84,30 @@ decade_avg <- function(year,bbox){
   return(mean(years))
 }
 
-tic("decade avg")
-decade_avg(2001,bbox)
-toc()
+
 ```
 
 
 ```{r}
-year<-2000
 bbox <- st_bbox(ca_shp)
-i <- 1
 
-tic("create 1 year avg")
-folder_name("tmin",year)
-year_avg_temp <- yearly_avg(year,bbox)
-toc()  # ~4 sec
+#tic("create 1 year avg")
+#year_avg_temp <- yearly_avg(year,bbox)
+#toc()  # ~4 sec
 
+
+tic("decade avg")
+temp_avg_2008 <- decade_avg(2008,bbox)
+toc()
+
+ca_clim_2008 <- mask(temp_avg_2008,ca_shp)
+plot(ca_clim_2008)
+writeRaster(ca_clim_2008, filename=here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
+
+temp_avg_2019 <- decade_avg(2019,bbox)
+ca_clim_2019 <- mask(temp_avg_2019,ca_shp)
 ```
 
 
-
-```{r}
-year<- 1970
-months <- stack()
-ca_bbox <- st_bbox(ca_shp)
-for(i in c(1:12)){
-   month_rast <- raster(here("raw_data",
-                             "world_clim_historical_monthly_data",
-                             "min_avg_temp",
-                             folder_name("tmin",year),
-                             file_name("tmin",year,i)))
-   month_rast <- crop(x= month_rast, y=ca_bbox)
-   months <- addLayer(months,month_rast)
-}
-mean(months)
-
-```
 
 
