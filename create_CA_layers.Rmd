@@ -317,20 +317,20 @@ plot(ca_lc_regions)
 ```{r}
 # Experiments to figure out reclassify
 
-# m<- matrix(c(0,0,0,
-#   10,11,20), nrow=3)
-# r <- raster(m)
+# Experiments to figure out reclassify
+
+# thresh <- cbind(10,20,1)
+# r <- raster(matrix(c(0,0,10,20), nrow=2))
 # 
-# new_r <- reclassify(r, thresh, right=NA) #a< raster <=b
-# newer_r <-reclassify(r, thresh) #a< raster <= b
-# newer2 <- reclassify(r, thresh, right=FALSE) # a<= raster <b
-# plot(r)
-# plot(new_r)
-# plot(newer_r)
-# plot(newer2)
+# newer_r <-reclassify(r, thresh) #(a,b]
+# new_r <- reclassify(r, thresh, right=NA) #[a,b] ? according to documentation should be a< raster <b
+# newer2 <- reclassify(r, thresh, right=FALSE) #[a,b)
 # 
-# forest <- mask(ca_lc_regions, ca_lc_regions == 4, maskvalue=F)
-# plot(forest)
+# plot(r, xlab="original")
+# plot(newer_r, xlab="no right")
+# plot(new_r, xlab="right=NA")
+# plot(newer2, xlab="right=FALSE")
+
 ```
 
 ```{r}
