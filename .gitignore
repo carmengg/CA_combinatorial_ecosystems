@@ -6,3 +6,4 @@
 raw_data/
 shapefiles/
 ca_subsets/
+*.html
