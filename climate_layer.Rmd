@@ -31,6 +31,9 @@ rm(temp)
 
 
 ```{r}
+# ---- NOTES ABOUT FILES ----
+# 2010 -2019 decade only has files until 2018
+
 #----- generate file name
 file_name <- function(tminmax,year,i){
   file <- paste("wc2.1_2.5m_",tminmax,"_",year,"-", sep="")
@@ -75,7 +78,7 @@ yearly_avg <- function(year,bbox){
 
 #------ create average over decade
 # calculate avg temperature over 30 years before year
-# ex: year= 2001, then average over [2000,1991,1990,1981,1980,1971]
+# ex: year= 2001, then average over [2000,1971]
 decade_avg <- function(year,bbox){
   years <- stack()
   for( i in c((year-30):(year-1))){
@@ -102,10 +105,26 @@ toc()
 
 ca_clim_2008 <- mask(temp_avg_2008,ca_shp)
 plot(ca_clim_2008)
-writeRaster(ca_clim_2008, filename=here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
+#writeRaster(ca_clim_2008, filename=here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
 
 temp_avg_2019 <- decade_avg(2019,bbox)
 ca_clim_2019 <- mask(temp_avg_2019,ca_shp)
+```
+
+```{r}
+year<-2019
+for( i in c((year-30):(year-1))){
+    for(j in c(1:12)){
+      min_path <- here("raw_data","world_clim_historical_monthly_data","min_avg_temp",folder_name("tmin",i), file_name("tmin",i,j))
+      max_path <- here("raw_data","world_clim_historical_monthly_data","max_avg_temp",folder_name("tmax",i), file_name("tmax",i,j))
+      if(file.exists(min_path) == FALSE){
+        print(file_name("tmin",i,j))
+      }
+      if(file.exists(max_path)==FALSE){
+        print(file_name("tmax",i,j))
+      }
+    }
+  }
 ```
 
 
