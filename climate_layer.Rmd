@@ -33,6 +33,7 @@ rm(temp)
 ```{r}
 # ---- NOTES ABOUT FILES ----
 # 2010 -2019 decade only has files until 2018
+#------------------------------------------------------------------------------
 
 #----- generate file name
 file_name <- function(tminmax,year,i){
@@ -106,27 +107,33 @@ toc()
 ca_clim_2008 <- mask(temp_avg_2008,ca_shp)
 plot(ca_clim_2008)
 #writeRaster(ca_clim_2008, filename=here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
+ca_clim_2008 <- raster(here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
 
 temp_avg_2019 <- decade_avg(2019,bbox)
 ca_clim_2019 <- mask(temp_avg_2019,ca_shp)
+writeRaster(ca_clim_2019, filename=here("ca_subsets","avg_temp_30years","ca_clim_2019.tif"))
+
+
+temp_avg_2001 <- decade_avg(2001,bbox)
+ca_clim_2001 <- mask(temp_avg_2001,ca_shp)
+writeRaster(ca_clim_2001, filename=here("ca_subsets","avg_temp_30years","ca_clim_2001.tif"))
+
+
+
+plot(ca_clim_2001)
+plot(ca_clim_2008)
+plot(ca_clim_2019)
+
 ```
 
 ```{r}
-year<-2019
-for( i in c((year-30):(year-1))){
-    for(j in c(1:12)){
-      min_path <- here("raw_data","world_clim_historical_monthly_data","min_avg_temp",folder_name("tmin",i), file_name("tmin",i,j))
-      max_path <- here("raw_data","world_clim_historical_monthly_data","max_avg_temp",folder_name("tmax",i), file_name("tmax",i,j))
-      if(file.exists(min_path) == FALSE){
-        print(file_name("tmin",i,j))
-      }
-      if(file.exists(max_path)==FALSE){
-        print(file_name("tmax",i,j))
-      }
-    }
-  }
+plot(ca_clim_2019 - ca_clim_2008, xlab="2019-2008")
+plot(ca_clim_2008 - ca_clim_2001, xlab="2008-2001")
+plot(ca_clim_2019 - ca_clim_2001, xlab="2019-2001")
 ```
 
+```{r}
 
+```
 
 
