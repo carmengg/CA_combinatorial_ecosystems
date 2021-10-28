@@ -11,108 +11,18 @@ library(rgdal)
 library(tidyverse)
 library(here)
 library(sf)
-```
 
-
-```{r}
-# 11 : open water          (10)
-# 12 : perennial ice/snow  (1)
-# 21-24 : developed        (2)
-# 31 : barren              (3)
-# 41-43 : forest           (4)
-# 51,52 : shrubland        (5)
-# 71-74 : grassland        (7)
-# 81,82: cropland          (8)
-# 90,95: wetland           (9)
-
-cats <- c("ice/snow","developed","barren","forest","shrub","NULL","grass","crop","wetland","water")
-
-lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
-lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
-plot(lc_2008, xlab= "2008")
-plot(lc_2019, xlab="2019")
-```
-
-
-
-
-```{r}
-
-# --- comparing 2008 and 2019 ---
-
-change <- (lc_2008 - lc_2019)
-change[change==0] <- NA
-plot(change)
-unique(change)
+library(tictoc)
 ```
 
 
 ```{r}
 
-# subset <- lc_2008
-# i=2
-# subset[subset!=i] <- NA # select category to analyze for change
-# #plot(subset)
-# 
-# change <- subset - lc_2019
-# 
-# df1 <- data.frame(freq(change)) %>% 
-#   filter(is.na(value)==FALSE)
-# 
-# value <- setdiff( seq(i-1,i-10,by=-1) ,df1[,1])
-# count <- rep(0,each=length(value))
-# df2 <- data.frame(value,count)
-# rm(value,count)
-# 
-# all_change <- bind_rows(df1,df2) %>% 
-#   arrange(desc(value))
-# all_change[,2]
-```
+# see how category i in A changes in B  (A and B have categories {1,...,k})
 
-
-
-```{r}
-# see how category i in A changes in B
-# change_i <- function(rasterA,i,rasterB){
-#   change <- rasterA
-#   change[change!=i] <- NA     # select category to analyze for change
-#   change <- change - rasterB  # change between A_i and B (change can equal 0)
-#   # if categories for rasters = {1,...,k}, then change categories = {i-1,...,1-k} 
-#   # ex: a pixel in change with value i-1 means A changed from category i to category 1
-#   
-#   df1 <- data.frame(freq(change)) %>% #count number of pixels in each change category
-#     filter(is.na(value)==FALSE)
-#   
-#   # -- extend dataframe to include categories A_i did not change to --
-#   value <- setdiff( seq(i-1,i-10,by=-1) ,df1[,1]) # A_i did not change to any of these categories
-#   count <- rep(0,each=length(value))
-#   df2 <- data.frame(value,count)
-# 
-#   all_change <- bind_rows(df1,df2) %>% 
-#     arrange(desc(value))  # recover categories in raster from order
-#   return(all_change[,2])
-# }
-# 
-# change_i(lc_2008,2,lc_2019)
-
-```
-
-
-
-```{r}
-
-# change_mtx <- matrix(NA, 10, 10)  ## set up an empty matrix to fill
-# for (i in 1:10) {
-#   ## fill i-th row of the matrix
-#   change_mtx[i,] <- change_i(lc_2008,i,lc_2019)
-#   }
-```
-
-```{r}
-# see how category i in A changes in B  (A and B has categories {1,...,k})
 change_i <- function(rasterA,i,rasterB,k){
   change <- rasterA
-  change[change!=i] <- NA     # select category to analyze for change
+  change[change!=i] <- NA     # select category A_i
   change <- change - rasterB  # change between A_i and B (change can equal 0)
   # if categories for rasters = {1,...,k}, then change categories = {i-1,...,1-k} 
   # ex: a pixel in change with value i-1 means A changed from category i to category 1
@@ -130,10 +40,11 @@ change_i <- function(rasterA,i,rasterB,k){
   return(all_change[,2])
 }
 
-# -------
+# ------------------------------------------------------------------------------------
 # Returns kxk matrix M = (M_ij)
 # M_ij = # pixels changed from category i in rasterA to category j in rasterB
 # cats = labels for categories
+
 change_mtx <- function(rasterA,rasterB,k, cats=NULL){
   mtx <- matrix(NA, k, k)  ## set up an empty matrix to fill
   for (i in 1:k) {
@@ -146,11 +57,44 @@ change_mtx <- function(rasterA,rasterB,k, cats=NULL){
   }
   return(mtx)
 }
-
-#---------------------------------
-change_mtx(lc_2008,lc_2019,10,cats)
 ```
+
 ```{r}
-unique(lc_2019)
+# --- comparing 2008 and 2019 land covers 
+
+lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
+lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
+plot(lc_2008, xlab= "2008")
+plot(lc_2019, xlab="2019")
 ```
 
+```{r}
+# --- map areas of change 
+
+change <- (lc_2008 - lc_2019)
+change[change==0] <- NA
+plot(change, xlab="areas which changed land cover 2008 to 2019")
+rm(change)
+```
+
+```{r}
+# ---- Create change matrix
+
+# 1 : perennial ice/snow  (12)
+# 2 : developed           (21 - 24)
+# 3 : barren              (31)
+# 4 : forest           (41-43)
+# 5 : shrubland        (51,52)
+# 7 : grassland        (71-74)
+# 8 : cropland          (81,82)
+# 9 : wetland           (90,95)
+# 10 : open water         (11)
+# numbers in parenthesis are the codes in original land cover map which have been aggregated under same category
+cats <- c("ice/snow","developed","barren","forest","shrub","NULL","grass","crop","wetland","water")
+
+tic("computing change mtx")
+change_mtx(lc_2008,lc_2019,10,cats)
+toc()
+```
+
+ex of how to read table: entry at row=forest and col=shrub are the #pixels changed from forest to shrub
