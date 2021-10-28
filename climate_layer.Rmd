@@ -32,7 +32,7 @@ rm(temp)
 
 ```{r}
 # ---- NOTES ABOUT FILES ----
-# 2010 -2019 decade only has files until 2018
+# 2010 - 2019 decade only has files until 2018
 #------------------------------------------------------------------------------
 
 #----- generate file name
@@ -107,16 +107,23 @@ toc()
 ca_clim_2008 <- mask(temp_avg_2008,ca_shp)
 plot(ca_clim_2008)
 #writeRaster(ca_clim_2008, filename=here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
-ca_clim_2008 <- raster(here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
 
 temp_avg_2019 <- decade_avg(2019,bbox)
 ca_clim_2019 <- mask(temp_avg_2019,ca_shp)
-writeRaster(ca_clim_2019, filename=here("ca_subsets","avg_temp_30years","ca_clim_2019.tif"))
+#writeRaster(ca_clim_2019, filename=here("ca_subsets","avg_temp_30years","ca_clim_2019.tif"))
 
 
 temp_avg_2001 <- decade_avg(2001,bbox)
 ca_clim_2001 <- mask(temp_avg_2001,ca_shp)
-writeRaster(ca_clim_2001, filename=here("ca_subsets","avg_temp_30years","ca_clim_2001.tif"))
+#writeRaster(ca_clim_2001, filename=here("ca_subsets","avg_temp_30years","ca_clim_2001.tif"))
+
+```
+
+
+```{r}
+ca_clim_2001 <- raster(here("ca_subsets","avg_temp_30years","ca_clim_2001.tif"))
+ca_clim_2008 <- raster(here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
+ca_clim_2019 <- raster(here("ca_subsets","avg_temp_30years","ca_clim_2019.tif"))
 
 
 
@@ -133,7 +140,78 @@ plot(ca_clim_2019 - ca_clim_2001, xlab="2019-2001")
 ```
 
 ```{r}
+# -inf, 0) and every month avg<10: polar   (1)
+# -inf, 0): boreal                         (2)
+#  [0,10) : cold temperate                 (3)
+#  [10,18) : warm temperate                (4)
+#  [18,24) : subtropical                   (5)
+#  [24,34) : tropical                      (6)
 
+temp_regions <- function(temp_map){
+  thresh<- matrix( c(-Inf, 0, 1, # this will be split into polar (1) and boreal (2)
+                    0, 10 , 3,
+                    10,18 , 4,
+                    18,24 , 5,
+                    24,43 , 6),
+                   nrow=5,
+                   byrow=TRUE) 
+  # *** still need to separate polar and boreal ***
+  return(reclassify(temp_map,thresh, right=FALSE)) # a<= raster <b
+  
+}
+
+t_regions <- stack(ca_clim_2001, ca_clim_2008, ca_clim_2019)
+t_regions <- temp_regions(t_regions)
+plot(t_regions)
+plot(t_regions[[3]]-t_regions[[1]], xlab="2019-2001")
+plot(t_regions[[2]]-t_regions[[1]], xlab="2008-2001")
 ```
 
+```{r}
+# see how category i in A changes in B  (A and B has categories {1,...,k})
+change_i <- function(rasterA,i,rasterB,k){
+  change <- rasterA
+  change[change!=i] <- NA     # select category to analyze for change
+  change <- change - rasterB  # change between A_i and B (change can equal 0)
+  # if categories for rasters = {1,...,k}, then change categories = {i-1,...,1-k} 
+  # ex: a pixel in change with value i-1 means A changed from category i to category 1
+  
+  df1 <- data.frame(freq(change)) %>% #count number of pixels in each change category
+    filter(is.na(value)==FALSE)
+  
+  # -- extend dataframe to include categories A_i did not change to --
+  value <- setdiff( seq(i-1,i-k,by=-1) ,df1[,1]) # A_i did not change to any of these categories
+  count <- rep(0,each=length(value))
+  df2 <- data.frame(value,count)
+
+  all_change <- bind_rows(df1,df2) %>% 
+    arrange(desc(value))  # recover categories in raster from order
+  return(all_change[,2])
+}
+
+# -------
+# Returns kxk matrix M = (M_ij)
+# M_ij = # pixels changed from category i in rasterA to category j in rasterB
+# cats = labels for categories
+change_mtx <- function(rasterA,rasterB,k, cats=NULL){
+  mtx <- matrix(NA, k, k)  ## set up an empty matrix to fill
+  for (i in 1:k) {
+    ## fill i-th row of the matrix
+    mtx[i,] <- change_i(rasterA,i,rasterB,k)
+  } 
+  if(is.null(cats) == FALSE){
+    rownames(mtx)<-cats
+    colnames(mtx)<-cats
+  }
+  return(mtx)
+}
+
+# -------------------------------------------------------------------------------------
+cats <- c("polar", "boreal", "cold temp","warm temp", "subtropical", "tropical")
+mtx_2008_2019 <- change_mtx(t_regions[[1]],
+                            t_regions[[3]],
+                            6,cats)
+
+
+```
 
