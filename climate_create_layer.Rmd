@@ -1,15 +1,16 @@
 ---
 title: "climate_layer"
+author: "Carmen Galaz-García"
 output: html_document
 ---
-```{r}
-knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
+```{r setup,  warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 
 library(raster)
 library(rgdal)
 library(tidyverse)
 library(here)
-library(sf) # simple features package (for shapefiles)
+library(sf) 
 
 library(tictoc)
 ```
@@ -97,7 +98,7 @@ bbox <- st_bbox(ca_shp)
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 # ---- test & timing  ---
 tic("create 1 year avg")
 year_avg_temp <- yearly_avg(year,bbox)
@@ -111,7 +112,7 @@ toc()  # ~2 min
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 # ---- create climate rasters for 2001, 2008, 2019 -----
 
 ca_clim_2001 <- mask(decade_avg(2001,bbox),ca_shp)
