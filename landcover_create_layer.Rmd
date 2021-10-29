@@ -74,79 +74,16 @@ ca_shp <- readOGR(here("shapefiles",
                        "ca-state-boundary",
                        "CA_State_TIGER2016.shp"))
 
+# ---------- crop ------
 
+ca_lc <- crop_shape(lc_2001,ca_shp)
+#writeRaster(ca_lc,filename=here("ca_subsets","landcover","ca_landcover_2001.tif"))
+
+# -------- make categories -----
+
+ca_lc_regions  <- landcover_regions(ca_lc_2001)
+writeRaster(ca_lc_regions,filename=here("ca_subsets","landcover","ca_landcover_regions_2001.tif"))
 ```
 
 
-```{r, eval=FALSE}
-# ----- Mask US land cover to CA
-
-# ---- US land cover raster
-# GDALinfo(here("raw_data",
-#               "nlcd_2008_land_cover_l48_20210604",
-#               "nlcd_2008_land_cover_l48_20210604.img"))
-
-# land_cover <- raster(here("raw_data",
-#               "nlcd_2008_land_cover_l48_20210604",
-#               "nlcd_2008_land_cover_l48_20210604.img"))
-
-
-#----- CA shapefile ------
-# ca_shp <- readOGR(here("shapefiles",
-#                        "ca-state-boundary",
-#                        "CA_State_TIGER2016.shp"))
-
-# --- mask
-#ca_shp <- spTransform(ca_shp, crs(land_cover))
-#ca_land_cover <- mask(crop(x= land_cover, y=st_bbox(ca_shp)),ca_shp)
-#writeRaster(ca_land_cover, filename=here(ca_subsets","landcover","ca_land_cover_2008.tif")  )
-#rm(land_cover)
-
-
-```
-
-
-```{r}
-# 11 : open water          (10)
-# 12 : perennial ice/snow  (1)
-# 21-24 : developed        (2)
-# 31 : barren              (3)
-# 41-43 : forest           (4)
-# 51,52 : shrubland        (5)
-# 71-74 : grassland        (7)
-# 81,82: cropland          (8)
-# 90,95: wetland           (9)
-  
-ca_land_cover <- raster(here("ca_subsets","landcover","ca_landcover_2008.tif"))
-
-thresh<- cbind( c(1:9)*10, c(2:10)*10, c(1:9)) 
-thresh[1,1] <-12
-
-ca_lc_regions <- ca_land_cover
-ca_lc_regions[ca_lc_regions == 11] <- 10
-
-ca_water_10 <- ca_lc_regions
-
-ca_lc_regions <- reclassify(ca_water_10,thresh, right=FALSE)
-unique(ca_lc_regions)
-plot(ca_lc_regions)
-#writeRaster(ca_lc_regions, filename=here("ca_subsets","landcover","ca_landcover_regions.tif")  )
-```
-
-
-
-
-```{r}
-lc_2019 <- raster(here("raw_data",
-              "nlcd_2019_land_cover_l48_20210604",
-              "nlcd_2019_land_cover_l48_20210604.img"))
-
-ca_shp <- spTransform(ca_shp, crs(lc_2019))
-ca_lc_2019 <- crop_shape(lc_2019,ca_shp)
-
-writeRaster(ca_lc_2019, filename=here("ca_subsets","landcover","ca_landcover_2019.tif"))
-
-ca_lc_regions_2019 <- landcover_regions(ca_lc_2019)
-writeRaster(ca_lc_regions_2019, filename=here("ca_subsets","landcover","ca_landcover_regions_2019.tif"))
-```
 
