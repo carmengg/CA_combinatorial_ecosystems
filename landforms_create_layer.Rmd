@@ -5,4 +5,40 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(rgdal)
+library(sf)
+library(here)
+#library(tidyverse)
 ```
+
+
+```{r}
+# ---- prep functions ----
+
+crop_shape <- function(ref_raster , shape){
+  new_shape <- spTransform(shape, crs(ref_raster))
+  return(mask(crop(x= ref_raster, y=st_bbox(new_shape)),new_shape))
+}
+
+landform_regions <- function(landform_rast){
+  thresh<- matrix(c(26,1,
+                    27,2,
+                    31,3,
+                    32,4), nrow=4,byrow=TRUE)
+  return(reclassify(landforms,thresh))
+}
+
+```
+
+
+```{r}
+#----- CA shapefile ------
+ca_shp <- readOGR(here("shapefiles",
+                       "ca-state-boundary",
+                       "CA_State_TIGER2016.shp"))
+
+
+```
+
