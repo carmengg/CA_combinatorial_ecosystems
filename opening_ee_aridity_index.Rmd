@@ -1,0 +1,22 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+library(raster)
+library(sf)
+library(here)
+
+ee_aridity <- raster("/Users/galaz-garcia/Downloads/ai_2000_CA_v2.tif")
+tnc_aridity <- raster(here('raw_data','AridityIndex','ai_et0','ai_et0.tif'))
+
+#plot(ee_aridity)
+summary(tnc_aridity)
+summary(ee_aridity)
+```
+
+```{r}
+
+```
+
