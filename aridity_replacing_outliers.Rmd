@@ -1,0 +1,65 @@
+---
+title: "aridity_replacing_outliers"
+author: "Carmen Galaz-García"
+date: "11/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(sf)
+library(here)
+```
+
+
+```{r}
+# returns a raster with same extent as aridity,
+# with all values outside (0,10) converted to out_value
+# and all other values to NA
+outliers <- function(aridity, low_end, high_end){
+  out_value = as.integer(summary(aridity)[5]*10)  # value outside raster range
+  bad_data <- aridity
+  
+  bad_data[bad_data<low_end] <- out_value
+  bad_data[bad_data>high_end] <- out_value  
+  bad_data[bad_data!= out_value] <- NA
+  
+  bad_indices <- which(bad_data[] == out_value )
+  
+  return(bad_indices)
+}
+# ----------------------------------------------------
+
+# returns a copy of the aridity raster 
+# with the outliers replaced by NA
+replace_outliers <- function(aridity,low_end, high_end){
+  
+  bad_indices <- outliers(aridity,low_end, high_end)
+  
+  # remove outliers
+  new_aridity <- aridity
+  new_aridity[new_aridity<low_end] <- NA
+  new_aridity[new_aridity>high_end] <- NA
+  
+  result<- extract(new_aridity, 
+                 xyFromCell(new_aridity, bad_indices), 
+                 buffer=100000, 
+                 fun=mean,
+                 na.rm=TRUE)
+  new_aridity[bad_indices] <-result
+  return(new_aridity)
+}
+
+```
+
+
+```{r}
+result <- replace_outliers(ee_aridity,0,10)
+
+plot(ee_aridity)
+plot(aridity_0to10)
+plot(result)
+```
+
