@@ -1,0 +1,134 @@
+---
+title: "aridity_replacing_outliers"
+author: "Carmen Galaz-García"
+date: "11/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(sf)
+library(here)
+```
+
+
+```{r}
+# returns a raster with same extent as aridity,
+# with all values outside (0,10) converted to out_value
+# and all other values to NA
+outliers <- function(aridity, low_end, high_end){
+  out_value = as.integer(summary(aridity)[5]*10)  # value outside raster range
+  bad_data <- aridity
+  
+  bad_data[bad_data<low_end] <- out_value
+  bad_data[bad_data>high_end] <- out_value  
+  bad_data[bad_data!= out_value] <- NA
+  
+  bad_indices <- which(bad_data[] == out_value )
+  
+  return(bad_indices)
+}
+# ----------------------------------------------------
+
+# returns a copy of the aridity raster 
+# with the outliers replaced by NA
+replace_outliers <- function(aridity,low_end, high_end){
+  
+  bad_indices <- outliers(aridity,low_end, high_end)
+  
+  # remove outliers
+  new_aridity <- aridity
+  new_aridity[new_aridity<low_end] <- NA
+  new_aridity[new_aridity>high_end] <- NA
+  
+  result<- extract(new_aridity, 
+                 xyFromCell(new_aridity, bad_indices), 
+                 buffer=100000, 
+                 fun=mean,
+                 na.rm=TRUE)
+  new_aridity[bad_indices] <-result
+  return(new_aridity)
+}
+
+```
+
+
+```{r}
+
+ee_2001 <- raster(here('ee_aridity','ee_ai_2001.tif'))
+r_2001 <- replace_outliers(ee_2001,0,10)
+
+plot(ee_2001)
+#plot(aridity_0to10)
+plot(r_2001)
+```
+
+```{r}
+ee_2008 <- raster(here('ee_aridity','ee_ai_2008.tif'))
+r_2008 <- replace_outliers(ee_2008,0,10)
+
+plot(r_2008)
+```
+
+```{r}
+ee_2019 <- raster(here('ee_aridity','ee_ai_2019.tif'))
+r_2019 <- replace_outliers(ee_2019,0,10)
+
+plot(r_2019)
+```
+```{r}
+# reclassify values into three groups: 
+# 1 = desert => AI < 0.05
+# 2 = dry => 0.05 <= AI <= 0.65
+# 3 = moist => 0.65 < AI
+# https://www.rdocumentation.org/packages/raster/versions/3.5-2/topics/reclassify
+# min, max, new_value
+aridity_regions <- function(arid_raster){
+  m <- c(0, 500 , 1,  
+         500, 6500, 2,  
+         6500, Inf, 3)
+  thresh <- matrix(m, ncol=3, byrow=TRUE)
+
+  # double check open/closed intervals
+  return(reclassify(arid_raster*10000,thresh))
+}
+
+```
+
+
+
+```{r}
+arid_regions_2001 <- aridity_regions(r_2001)
+plot(r_2001)
+plot(arid_regions_2001)
+```
+
+```{r}
+plot(raster(here('ca_aridity_regions.tif')))
+```
+
+```{r}
+arid_regions_2008 <- aridity_regions(r_2008)
+plot(r_2008)
+plot(arid_regions_2008)
+```
+
+```{r}
+arid_regions_2019 <- aridity_regions(r_2019)
+plot(r_2019)
+plot(arid_regions_2019)
+```
+```{r}
+plot(arid_regions_2001, xlab='2001')
+plot(arid_regions_2008, xlab='2008')
+plot(arid_regions_2019, xlab='2019')
+```
+
+```{r}
+writeRaster(arid_regions_2001, here("arid_regions","arid_regions_2001.tif"))
+writeRaster(arid_regions_2008, here("arid_regions","arid_regions_2008.tif"))
+writeRaster(arid_regions_2019, here("arid_regions","arid_regions_2019.tif"))
+```
+
