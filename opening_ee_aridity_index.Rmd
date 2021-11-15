@@ -8,15 +8,86 @@ library(raster)
 library(sf)
 library(here)
 
-ee_aridity <- raster("/Users/galaz-garcia/Downloads/ai_2000_CA_v2.tif")
-tnc_aridity <- raster(here('raw_data','AridityIndex','ai_et0','ai_et0.tif'))
+ee_aridity <- raster(here("ee_aridity","ee_ai_2001.tif"))
+#tnc_aridity <- raster(here('raw_data','AridityIndex','ai_et0','ai_et0.tif'))
 
 #plot(ee_aridity)
-summary(tnc_aridity)
+#summary(tnc_aridity)
 summary(ee_aridity)
 ```
 
 ```{r}
+bad_data <- ee_aridity
+bad_data[bad_data>10] <- 3000
+bad_data[bad_data<0] <- 3000
+bad_data[bad_data!= 3000] <- NA
+
+plot(bad_data)
+freq(bad_data)
+```
+
+
+```{r}
+aridity_0to10 <- ee_aridity
+aridity_0to10[aridity_0to10 >10] <- NA
+aridity_0to10[aridity_0to10 <0] <- NA
+
+summary(aridity_0to10)
+plot(aridity_0to10)
+```
+
+```{r}
+# https://search.r-project.org/CRAN/refmans/raster/html/focal.html
+r <- raster(ncols=36, nrows=18, xmn=0)
+values(r) <- runif(ncell(r)) 
+plot(r)
+r3 <- focal(r, w=matrix(1/9,nrow=3,ncol=3)) 
+plot(r3)
+
+
+r5 <- focal(r, w=matrix(1/25,nrow=5,ncol=5)) 
+plot(r5)
+```
+
+```{r}
+# https://stackoverflow.com/questions/64738800/how-to-find-the-coordinates-of-a-pixel-with-a-specific-value-in-a-raster-data-in
+bad_coords<-xyFromCell(bad_data, which(bad_data[] == 3000 ))
+bad_coords
+```
+
+```{r}
+extract(bad_data, bad_coords) # checking what extract does
+
+```
+
+```{r}
+# https://www.rdocumentation.org/packages/raster/versions/3.5-2/topics/extract
+result<- extract(
+                 #ee_aridity,
+                 aridity_0to10, 
+                 bad_coords, 
+                 buffer=100000, 
+                 fun=mean,
+                 na.rm=TRUE)
+result
+```
+
+```{r}
+plot(aridity_0to10)
+points(bad_coords, col = "red")
+```
+
+```{r}
+bad_indices <- which(bad_data[] == 3000 )
+replace <- aridity_0to10
+replace[bad_indices] <- 11
+plot(replace)
+```
+
+```{r}
+replace[bad_indices] <-result
+plot(aridity_0to10)
+plot(replace)
 
 ```
 
