@@ -1,8 +1,9 @@
 ---
-title: "climate_layer"
-author: "Carmen Galaz-García"
+title: "Untitled"
 output: html_document
 ---
+
+
 ```{r setup,  warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -14,6 +15,8 @@ library(sf)
 
 library(tictoc)
 ```
+
+
 
 
 ```{r}
@@ -41,49 +44,118 @@ folder_name <- function(tminmax,year){
 
 
 ```{r}
-
-#----- clipping and writing monthly rasters
-# year = year to compute average temperature
-# bbox = bounding box of area of interest
-# returns the average of all (avg min monthly temps) and (avg max monthly temps) 
-yearly_avg <- function(year,bbox){
-  months <- stack()
-  for(i in c(1:12)){
-     month_rast <- raster(here("raw_data",
-                               "world_clim_historical_monthly_data",
-                               "min_avg_temp",
-                               folder_name("tmin",year),
-                               file_name("tmin",year,i)))
-     month_rast <- crop(x= month_rast, y=bbox)
-     months <- addLayer(months,month_rast)
+check_paths <- function(year,month){
+  min_rast <- here("raw_data",
+                          "world_clim_historical_monthly_data",
+                          "min_avg_temp",
+                          folder_name("tmin",year),
+                          file_name("tmin",year,month))
+  if(file.exists(min_rast) == FALSE){
+    print(min_rast)
   }
-  for(i in c(1:12)){
-     month_rast <- raster(here("raw_data",
+  
+  max_rast <- here("raw_data",
                                "world_clim_historical_monthly_data",
                                "max_avg_temp",
                                folder_name("tmax",year),
-                               file_name("tmax",year,i)))
-     month_rast <- crop(x= month_rast, y=bbox)
-     months <- addLayer(months,month_rast)
+                               file_name("tmax",year,month))
+  if(file.exists(min_rast) == FALSE){
+    print(min_rast)
   }
-  return(mean(months))
 }
 
-#------ create average over decade
-# calculate avg temperature over 30 years before year
-# ex: year= 2001, then average over [2000,1971]
-thirty_year_avg <- function(year,bbox){
-  years <- stack()
-  for( i in c((year-30):(year-1))){
-    years<- addLayer(years, yearly_avg(i,bbox))
-  }
-  return(mean(years))
+
+# n <- 30
+# year <- 2001
+# for( i in c((year-n):(year-1))){
+#     for(j in 1:12){
+#       check_paths(i,j)
+#     }
+#   }
+
+```
+
+```{r}
+# Returns raster with temp average (min + max)/2 on specified month
+# year, month = year + month (1-12) to compute average temperature
+# bbox = bounding box of area of interest
+
+month_avg <- function(year,month,bbox){
+  
+  min_rast <- raster(here("raw_data",
+                          "world_clim_historical_monthly_data",
+                          "min_avg_temp",
+                          folder_name("tmin",year),
+                          file_name("tmin",year,month)))
+  min_rast <- crop(x= min_rast, y=bbox)
+  
+  max_rast <- raster(here("raw_data",
+                               "world_clim_historical_monthly_data",
+                               "max_avg_temp",
+                               folder_name("tmax",year),
+                               file_name("tmax",year,month)))
+  max_rast <- crop(x= max_rast, y=bbox)
+  
+  return((min_rast+max_rast)/2)
 }
 
+#------------------------------------------------------------------------------
+
+#------ create average over time period
+# return raster brick with avg temperatures for every month over time period
+# ex: year=2001, n=30, then average over [2000,1971]
+# bbox = bounding box of area of interest
+
+all_monthly_avgs <- function(year,n,bbox){
+  months <- stack()
+  for( i in c((year-n):(year-1))){
+    for(j in 1:12){
+      months <- addLayer(months, month_avg(i,j,bbox))
+    }
+  }
+  return(months)
+}
+
+
+#------------------------------------------------------------------------------
+
+#------ create average over time period
+# calculate avg temperature over n years before year
+# ex: year=2001, n=30, then average over [2000,1971]
+# bbox = bounding box of area of interest
+time_prd_avg <- function(year,n,bbox){
+  return(mean(all_monthly_avgs(year,n,bbox)))
+}
+```
+
+```{r}
+
+#----- CA shapefile & bounding box ------
+ca_shp <- readOGR(here("shapefiles",
+                       "ca-state-boundary",
+                       "CA_State_TIGER2016.shp"))
+temp <- raster(here("raw_data","world_clim_historical_monthly_data",
+                        "max_avg_temp",
+                        "wc2.1_2.5m_tmax_1970-1979",
+                         "wc2.1_2.5m_tmax_1970-01.tif"))
+ca_shp <- spTransform(ca_shp, crs(temp))
+rm(temp)
+bbox <- st_bbox(ca_shp)
 
 ```
 
 
+```{r}
+clim_2001 <- raster(here('ca_subsets','avg_temp_30years','ca_clim_2001.tif'))
+
+tic("30 yr avg")
+months_clim_2001 <- all_monthly_avgs(2001,30,bbox)
+toc()  # ~2 min
+
+bis_clim_2001 <- mask(mean(months_clim_2001),ca_shp)
+plot(bis_clim_2001 - clim_2001)
+## NOTE: maybe modify workflow so you only have to divide at the very end (minimize floating point error)
+```
 
 ```{r}
 # ---------------------------------------------------------------------------
@@ -140,65 +212,5 @@ separate_polar_boreal <- function(temp_regions, months_weather){
   return(temp_regions)
 }
 
-
-
-#writeRaster(temp_regions, filename=here("ca_subsets","avg_temp_30years","ca_30yr_temp_regions.tif"))
 ```
 
-```{r}
-# ---------------------------------------------------------------------------
-# temp_map = raster with average temperature (30 year avg)
-# path_months_weather = path to folder containing all month average 
-temp_regions <- function(temp_map, path_months_weather){
-  raster_files <-list.files(path = herepath_months_weather, 
-                            full.names = TRUE)
-  months_weather <- raster::stack(raster_files)
-  return(separate_polar_boreal(temp_regions_1(temp_map),months_weater))
-}
-
-```
-
-
-```{r}
-#----- CA shapefile & bounding box ------
-ca_shp <- readOGR(here("shapefiles",
-                       "ca-state-boundary",
-                       "CA_State_TIGER2016.shp"))
-temp <- raster(here("raw_data","world_clim_historical_monthly_data",
-                        "max_avg_temp",
-                        "wc2.1_2.5m_tmax_1970-1979",
-                         "wc2.1_2.5m_tmax_1970-01.tif"))
-ca_shp <- spTransform(ca_shp, crs(temp))
-rm(temp)
-
-bbox <- st_bbox(ca_shp)
-
-```
-
-```{r, eval=FALSE}
-# ---- test & timing  ---
-tic("create 1 year avg")
-year_avg_temp <- yearly_avg(year,bbox)
-toc()  # ~4 sec
-
-
-tic("decade avg")
-temp_avg_2008 <- decade_avg(2008,bbox)
-toc()  # ~2 min
-
-```
-
-
-```{r, eval=FALSE}
-# ---- create climate rasters for 2001, 2008, 2019 -----
-
-ca_clim_2001 <- mask(decade_avg(2001,bbox),ca_shp)
-#writeRaster(ca_clim_2001, filename=here("ca_subsets","avg_temp_30years","ca_clim_2001.tif"))
-
-ca_clim_2008 <- mask(decade_avg(2008,bbox),ca_shp)
-#writeRaster(ca_clim_2008, filename=here("ca_subsets","avg_temp_30years","ca_clim_2008.tif"))
-
-ca_clim_2019 <- mask(decade_avg(2019,bbox),ca_shp)
-#writeRaster(ca_clim_2019, filename=here("ca_subsets","avg_temp_30years","ca_clim_2019.tif"))
-
-```
