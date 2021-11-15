@@ -56,7 +56,6 @@ replace_outliers <- function(aridity,low_end, high_end){
 
 
 ```{r}
-
 ee_2001 <- raster(here('ee_aridity','ee_ai_2001.tif'))
 r_2001 <- replace_outliers(ee_2001,0,10)
 
@@ -78,6 +77,7 @@ r_2019 <- replace_outliers(ee_2019,0,10)
 
 plot(r_2019)
 ```
+
 ```{r}
 # reclassify values into three groups: 
 # 1 = desert => AI < 0.05
@@ -130,5 +130,11 @@ plot(arid_regions_2019, xlab='2019')
 writeRaster(arid_regions_2001, here("arid_regions","arid_regions_2001.tif"))
 writeRaster(arid_regions_2008, here("arid_regions","arid_regions_2008.tif"))
 writeRaster(arid_regions_2019, here("arid_regions","arid_regions_2019.tif"))
+
+result <- replace_outliers(ee_aridity,0,10)
+
+plot(ee_aridity)
+plot(aridity_0to10)
+plot(result)
 ```
 
