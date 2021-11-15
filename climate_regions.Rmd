@@ -105,17 +105,102 @@ month_avg <- function(year,month,bbox){
 # return raster brick with avg temperatures for every month over time period
 # ex: year=2001, n=30, then average over [2000,1971]
 # bbox = bounding box of area of interest
+# structure is [(yr_1,mth_1), ..., (yr_1,mth_12), ... , (yr_n,mth_1), ...,(yr_n,mth_12)]
 
 all_monthly_avgs <- function(year,n,bbox){
   months <- stack()
   for( i in c((year-n):(year-1))){
-    for(j in 1:12){
+      for(j in 1:12){
       months <- addLayer(months, month_avg(i,j,bbox))
     }
   }
   return(months)
 }
+```
 
+
+```{r}
+# ---------------------------------------------------------------------------
+# (-inf, 0) and every month avg<10: polar   (1)
+# (-inf, 0): boreal                         (2)
+#  [0,10) : cold temperate                  (3)
+#  [10,18) : warm temperate                 (4)
+#  [18,24) : subtropical                    (5)
+#  [24,34) : tropical                       (6)
+
+# temp_map = raster with average temperature (30 year avg)
+pre_temp_regions <- function(temp_map){
+  thresh<- matrix( c(-Inf, 0, 1, # this will be split into polar (1) and boreal (2)
+                    0, 10 , 3,
+                    10,18 , 4,
+                    18,24 , 5,
+                    24,43 , 6),
+                   nrow=5,
+                   byrow=TRUE) 
+  # *** still need to separate polar and boreal ***
+  # *** coming out of here category 1 = polar or boreal ***
+  return(reclassify(temp_map,thresh, right=FALSE)) # a<= raster <b
+}
+
+# ---------------------------------------------------------------------------
+# separate polar and boreal
+# temp_regions = raster with temperature regions (codes 1-6)
+# months_weather = raster stack with monthly average temperatures in 30 years = [30 yr avg January, ... , 30 yr avg December]
+separate_polar_boreal <- function(temp_regions, months_weather){
+  
+  polar_boreal <- temp_regions
+  polar_boreal[polar_boreal!=1] <- NA # select polar + boreal
+
+  months_boreal = polar_boreal*months_weather  # id polar+boreal regions over each month
+
+  # choosing months with possible boreal regions (some month has avg temp>=10)
+  drop <- c() # list of indices that need to be dropped
+  for (i in 1:12){
+    # if all temps on that month are <10, then cannot be boreal
+    if(maxValue(months_boreal[[i]]) <10){ 
+      drop <- c(drop,i)  
+    }
+  }
+  
+  # select months which have some pts in which avg temp is >=10
+  months_boreal <- dropLayer(months_boreal, drop) 
+  
+  # ************************************************************
+  # select pts in the months with avg temp >=10
+  boreal_region <- months_boreal >= 10
+  # if more than one layer in months_boreal (maybe have to make NA into 0)
+  #boreal_region <- sum(months_boreal)  
+  #boreal_region[boreal_region>0] <- 1
+  boreal_region[is.na(boreal_region) == TRUE] <- 0 # so you don't have NA + 0 adding the raster layers
+  # ************************************************************
+  
+  temp_regions <- temp_regions + boreal_region # original layer 1 + 1 = 2 (boreal)
+  return(temp_regions)
+}
+
+# ---------------------------------------------------------------------------
+
+temp_regions <- function(temp_map, months_weather){
+  avg_per_month <- stack()
+  n = length(months_weather)/12  # assumes you have data for each month in year
+  
+  for(i in 1:12){
+    aux <- stack()
+    for ( j in 0:(n-1)){
+      aux <- addLayer(aux, months_weather[[j*12+i]])  
+    }
+    avg_per_month <- addLayer(avg_per_month, mean(aux))
+    rm(aux)
+  }
+  
+  return(separate_polar_boreal(pre_temp_regions(temp_map),
+                               avg_per_month))
+}
+
+```
+
+
+```{r}
 
 #------------------------------------------------------------------------------
 
@@ -125,6 +210,24 @@ all_monthly_avgs <- function(year,n,bbox){
 # bbox = bounding box of area of interest
 time_prd_avg <- function(year,n,bbox){
   return(mean(all_monthly_avgs(year,n,bbox)))
+}
+
+
+#------------------------------------------------------------------------------
+
+# ---- create average over time period + regions
+# returns a raster stack
+#   1st layer = avg over time period 
+#   2nd layer = regions based on 1st layer
+
+climate_and_regions <- function(year,n,bbox){
+  months_weather <- all_monthly_avgs(year,n,bbox)
+  
+  result <- stack()
+  result <- addLayer(result, mean(months_weather))
+  result <- addLayer(result, temp_regions(result[[1]],months_weather))
+  
+  return(result)
 }
 ```
 
@@ -157,60 +260,4 @@ plot(bis_clim_2001 - clim_2001)
 ## NOTE: maybe modify workflow so you only have to divide at the very end (minimize floating point error)
 ```
 
-```{r}
-# ---------------------------------------------------------------------------
-# (-inf, 0) and every month avg<10: polar   (1)
-# (-inf, 0): boreal                         (2)
-#  [0,10) : cold temperate                  (3)
-#  [10,18) : warm temperate                 (4)
-#  [18,24) : subtropical                    (5)
-#  [24,34) : tropical                       (6)
-
-# temp_map = raster with average temperature (30 year avg)
-temp_regions_1 <- function(temp_map){
-  thresh<- matrix( c(-Inf, 0, 1, # this will be split into polar (1) and boreal (2)
-                    0, 10 , 3,
-                    10,18 , 4,
-                    18,24 , 5,
-                    24,43 , 6),
-                   nrow=5,
-                   byrow=TRUE) 
-  # *** still need to separate polar and boreal ***
-  # *** coming out of here category 1 = polar or boreal ***
-  return(reclassify(temp_map,thresh, right=FALSE)) # a<= raster <b
-}
-
-# ---------------------------------------------------------------------------
-# separate polar and boreal
-# temp_regions = raster with temperature regions (codes 1-6)
-# months_weather = raster stack with monthly average temperatures in 30 years(?)
-separate_polar_boreal <- function(temp_regions, months_weather){
-  polar_boreal <- temp_regions
-  polar_boreal[polar_boreal!=1] <- NA
-
-  months_boreal = polar_boreal*months_weather
-
-  # choosing months with possible boreal regions (some month has avg temp>=10)
-  drop <- c() # list of indices that need to be dropped
-  k = length(months_boreal)
-  for (i in 1:k){
-    # if all temps on that month are <10, then cannot be boreal
-    if(maxValue(months_boreal[[i]]) <10){ 
-      drop <- c(drop,i)  
-    }
-  }
-  # select months with pts in which avg temp is >=10
-  months_boreal <- dropLayer(months_boreal, drop) 
-  # select pts in the months with avg temp >=10
-  boreal_region <- months_boreal >= 10
-  # if more than one layer in months_boreal (maybe have to make NA into 0)
-  #boreal_region <- sum(months_boreal)  
-  #boreal_region[boreal_region>0] <- 1
-  boreal_region[is.na(boreal_region) == TRUE] <- 0 # so you don't have NA + 0 adding the raster layers
-  
-  temp_regions <- temp_regions + boreal_region# original layer 1 + 1 = 2 (boreal)
-  return(temp_regions)
-}
-
-```
 
