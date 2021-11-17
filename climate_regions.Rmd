@@ -44,38 +44,6 @@ folder_name <- function(tminmax,year){
 
 
 ```{r}
-check_paths <- function(year,month){
-  min_rast <- here("raw_data",
-                          "world_clim_historical_monthly_data",
-                          "min_avg_temp",
-                          folder_name("tmin",year),
-                          file_name("tmin",year,month))
-  if(file.exists(min_rast) == FALSE){
-    print(min_rast)
-  }
-  
-  max_rast <- here("raw_data",
-                               "world_clim_historical_monthly_data",
-                               "max_avg_temp",
-                               folder_name("tmax",year),
-                               file_name("tmax",year,month))
-  if(file.exists(min_rast) == FALSE){
-    print(min_rast)
-  }
-}
-
-
-# n <- 30
-# year <- 2001
-# for( i in c((year-n):(year-1))){
-#     for(j in 1:12){
-#       check_paths(i,j)
-#     }
-#   }
-
-```
-
-```{r}
 # Returns raster with temp average (min + max)/2 on specified month
 # year, month = year + month (1-12) to compute average temperature
 # bbox = bounding box of area of interest
@@ -190,30 +158,6 @@ separate_polar_boreal <- function(temp_regions, months_weather){
 
 
 ```{r}
-###################################################################
-tic("30 yr avg")
-months_clim_2001 <- all_monthly_avgs(2001,30,bbox)
-toc()  # ~2 min
-
-bis_clim_2001 <- mask(mean(months_clim_2001),ca_shp)
-plot(bis_clim_2001)
-###################################################################
-tic("pre-regions")
-pre_regions <- pre_temp_regions(bis_clim_2001)
-toc()
-plot(pre_regions)
-plot(pre_regions==1)
-###################################################################
-regions <- separate_polar_boreal(pre_regions,avg_per_month)
-plot(regions==1)
-plot(regions<=2)
-plot(regions<=3)
-plot(regions<=4)
-plot(regions<=5)
-```
-
-
-```{r}
 # ---------------------------------------------------------------------------
 
 temp_regions <- function(temp_map, months_weather){
@@ -232,10 +176,7 @@ temp_regions <- function(temp_map, months_weather){
   return(separate_polar_boreal(pre_temp_regions(temp_map),
                                avg_per_month))
 }
-#//////////////////////////////////////////////////////////////////////////////
 
-
-#plot(temp_regions(bis_clim_2001,months_clim_2001))
 ```
 
 
@@ -268,16 +209,8 @@ climate_and_regions <- function(year,n,bbox){
   
   return(result)
 }
-
-#//////////////////////////////////////////////////////////////////////////////
-tic('climate and regions')
-clim_regions_stack <- climate_and_regions(2001,30,bbox)
-toc()
-
-
-clim_regions_stack <- mask(clim_regions_stack,ca_shp)
-plot(clim_regions_stack)
 ```
+
 
 ```{r}
 
@@ -293,19 +226,32 @@ ca_shp <- spTransform(ca_shp, crs(temp))
 rm(temp)
 bbox <- st_bbox(ca_shp)
 
-```
+#------------------------------------------------------------------------------
+# ----- Creating climate and climate regions rasters -----
+tic('climate and regions')
+clim_regions_stack <- climate_and_regions(2001,30,bbox)
+toc()
 
 
-```{r}
-clim_2001 <- raster(here('ca_subsets','avg_temp_30years','ca_clim_2001.tif'))
+clim_regions_stack <- mask(clim_regions_stack,ca_shp)
+plot(clim_regions_stack)
 
-tic("30 yr avg")
-months_clim_2001 <- all_monthly_avgs(2001,30,bbox)
-toc()  # ~2 min
+writeRaster(clim_regions_stack[[2]],
+            here('ca_subsets','avg_temp_30years','ca_clim_regions_2001.tif'))
+#------------------------------------------------------------------------------
 
-bis_clim_2001 <- mask(mean(months_clim_2001),ca_shp)
-plot(bis_clim_2001 - clim_2001)
-## NOTE: maybe modify workflow so you only have to divide at the very end (minimize floating point error)
+clim_regions_stack <- climate_and_regions(2008,30,bbox)
+clim_regions_stack <- mask(clim_regions_stack,ca_shp)
+
+writeRaster(clim_regions_stack[[2]],
+            here('ca_subsets','avg_temp_30years','ca_clim_regions_2008.tif'))
+#------------------------------------------------------------------------------
+clim_regions_stack <- climate_and_regions(2019,30,bbox)
+clim_regions_stack <- mask(clim_regions_stack,ca_shp)
+
+writeRaster(clim_regions_stack[[2]],
+            here('ca_subsets','avg_temp_30years','ca_clim_regions_2019.tif'))
+
 ```
 
 
