@@ -84,7 +84,7 @@ thirty_year_avg <- function(year,bbox){
 ```
 
 
-
+```{r}
 # ---------------------------------------------------------------------------
 # (-inf, 0) and every month avg<10: polar   (1)
 # (-inf, 0): boreal                         (2)

@@ -141,16 +141,20 @@ pre_temp_regions <- function(temp_map){
   # * coming out of here category (1) = polar or boreal *
   return(reclassify(temp_map,thresh, right=FALSE)) # a<= raster <b
 }
+```
 
+```{r}
 # ---------------------------------------------------------------------------
 # separate polar and boreal
 # temp_regions = raster with temperature regions coming from pre_temp_regions (codes 1,3-6 and 1= polar or boreal)
 # months_weather = raster stack with monthly average temperatures in 30 years = [30 yr avg January, ... , 30 yr avg December]
 separate_polar_boreal <- function(temp_regions, months_weather){
   
+  # ..............................................................
+  # id polar+boreal regions over each month
   polar_boreal <- temp_regions
-  polar_boreal[polar_boreal!=1] <- NA # select polar + boreal
-  months_boreal = polar_boreal*months_weather  # id polar+boreal regions over each month
+  polar_boreal[polar_boreal!=1] <- NA 
+  months_boreal = polar_boreal*months_weather  
   
   # ..............................................................
   # choose months in months_boreal with possible boreal regions (some month has avg temp>=10)
@@ -166,20 +170,46 @@ separate_polar_boreal <- function(temp_regions, months_weather){
   # ..............................................................
   # select pixel in months_boreal with avg temp >=10
   #boreal_region <- months_boreal >= 10
-  n <- length(months_boreal)
   thresh <- matrix(c(-Inf, 10, 0, 10, Inf, 1), nrow=2,byrow=TRUE)
-  for(i in 1:n){
-    months_boreal[[i]] <- reclassify(months_boreal[[i]],thresh) 
+  boreal_region <- reclassify(months_boreal,thresh)
+  if(nlayers(boreal_region)>1){
+    boreal_region <- sum(boreal_region) 
+    boreal_region[boreal_region>0] <- 1 
   }
-  boreal_region <- sum(months_boreal)  
-  boreal_region[boreal_region>0] <- 1 # here every boreal pixel = 1, polar pixels = 0, all others NA
+  # at this point every boreal pixel = 1, polar pixels = 0, all others NA
 
   # ..............................................................
   # add boreal region to original temp regions raster
   boreal_region[is.na(boreal_region) == TRUE] <- 0 # so you don't have NA + 0 adding the raster layers in next step
   temp_regions <- temp_regions + boreal_region # original layer 1 + 1 = 2 (boreal)
+
+  # ..............................................................
   return(temp_regions)
 }
+```
+
+
+```{r}
+###################################################################
+tic("30 yr avg")
+months_clim_2001 <- all_monthly_avgs(2001,30,bbox)
+toc()  # ~2 min
+
+bis_clim_2001 <- mask(mean(months_clim_2001),ca_shp)
+plot(bis_clim_2001)
+###################################################################
+tic("pre-regions")
+pre_regions <- pre_temp_regions(bis_clim_2001)
+toc()
+plot(pre_regions)
+plot(pre_regions==1)
+###################################################################
+regions <- separate_polar_boreal(pre_regions,avg_per_month)
+plot(regions==1)
+plot(regions<=2)
+plot(regions<=3)
+plot(regions<=4)
+plot(regions<=5)
 ```
 
 
@@ -188,7 +218,7 @@ separate_polar_boreal <- function(temp_regions, months_weather){
 
 temp_regions <- function(temp_map, months_weather){
   avg_per_month <- stack()
-  n = length(months_weather)/12  # assumes you have data for each month in year
+  n = nlayers(months_weather)/12  # assumes you have data for each month in year
   
   for(i in 1:12){
     aux <- stack()
