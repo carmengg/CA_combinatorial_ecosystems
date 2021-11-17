@@ -232,7 +232,10 @@ temp_regions <- function(temp_map, months_weather){
   return(separate_polar_boreal(pre_temp_regions(temp_map),
                                avg_per_month))
 }
+#//////////////////////////////////////////////////////////////////////////////
 
+
+#plot(temp_regions(bis_clim_2001,months_clim_2001))
 ```
 
 
@@ -265,6 +268,15 @@ climate_and_regions <- function(year,n,bbox){
   
   return(result)
 }
+
+#//////////////////////////////////////////////////////////////////////////////
+tic('climate and regions')
+clim_regions_stack <- climate_and_regions(2001,30,bbox)
+toc()
+
+
+clim_regions_stack <- mask(clim_regions_stack,ca_shp)
+plot(clim_regions_stack)
 ```
 
 ```{r}
