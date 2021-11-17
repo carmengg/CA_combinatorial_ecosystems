@@ -138,7 +138,7 @@ pre_temp_regions <- function(temp_map){
                    nrow=5,
                    byrow=TRUE) 
   # * still need to separate polar and boreal *
-  # * coming out of here category 1 = polar or boreal *
+  # * coming out of here category (1) = polar or boreal *
   return(reclassify(temp_map,thresh, right=FALSE)) # a<= raster <b
 }
 
@@ -152,7 +152,7 @@ separate_polar_boreal <- function(temp_regions, months_weather){
   polar_boreal[polar_boreal!=1] <- NA # select polar + boreal
   months_boreal = polar_boreal*months_weather  # id polar+boreal regions over each month
   
-  # ///////////////////////////////////////////////////////////////
+  # ..............................................................
   # choose months in months_boreal with possible boreal regions (some month has avg temp>=10)
   drop <- c() # list of indices that need to be dropped
   for (i in 1:12){
@@ -163,15 +163,20 @@ separate_polar_boreal <- function(temp_regions, months_weather){
   }
   months_boreal <- dropLayer(months_boreal, drop) 
   
-  # ///////////////////////////////////////////////////////////////
-  # select pts in months_boreal with avg temp >=10
-  boreal_region <- months_boreal >= 10
-  # if more than one layer in months_boreal (maybe have to make NA into 0)
-  #boreal_region <- sum(months_boreal)  
-  #boreal_region[boreal_region>0] <- 1
-  boreal_region[is.na(boreal_region) == TRUE] <- 0 # so you don't have NA + 0 adding the raster layers
-  # ************************************************************
-  
+  # ..............................................................
+  # select pixel in months_boreal with avg temp >=10
+  #boreal_region <- months_boreal >= 10
+  n <- length(months_boreal)
+  thresh <- matrix(c(-Inf, 10, 0, 10, Inf, 1), nrow=2,byrow=TRUE)
+  for(i in 1:n){
+    months_boreal[[i]] <- reclassify(months_boreal[[i]],thresh) 
+  }
+  boreal_region <- sum(months_boreal)  
+  boreal_region[boreal_region>0] <- 1 # here every boreal pixel = 1, polar pixels = 0, all others NA
+
+  # ..............................................................
+  # add boreal region to original temp regions raster
+  boreal_region[is.na(boreal_region) == TRUE] <- 0 # so you don't have NA + 0 adding the raster layers in next step
   temp_regions <- temp_regions + boreal_region # original layer 1 + 1 = 2 (boreal)
   return(temp_regions)
 }
