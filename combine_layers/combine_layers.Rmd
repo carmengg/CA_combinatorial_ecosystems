@@ -1,0 +1,38 @@
+---
+title: "eco_land_units"
+output: html_document
+---
+
+```{r}
+library(here)
+library(raster)
+library(sf)
+library(tictoc)
+```
+
+```{r}
+combine_layers <- function(year){
+
+  root <- here('combine_layers','matched_layers_timeseries')
+  clim <- raster(paste(root,'/climate/ca_clim_match_',year,'.tif',sep=""))
+  arid <- raster(paste(root,'/aridity/ca_arid_match_',year,'.tif',sep=""))
+  forms <- raster(paste(root,'/landforms/ca_landforms_match.tif',sep=""))
+  lcover <- raster(paste(root,'/landcover/ca_landcover_regions_match_',year,'.tif',sep=""))
+  
+  combined <- clim + 10*arid + 100*forms + 1000*lcover
+  
+  # mask to CA 
+  ca_shp <- readOGR(here("shapefiles","ca-state-boundary", "CA_State_TIGER2016.shp"))
+  ca_shp <- spTransform(ca_shp, crs(lcover))
+  
+  return(mask(combined,ca_shp))
+  
+}
+```
+
+```{r}
+tic('combining layers')
+elu_2001 <- combine_layers(2001)
+toc('')
+```
+
