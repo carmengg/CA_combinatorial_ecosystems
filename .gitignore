@@ -8,3 +8,4 @@ shapefiles/
 ca_subsets/
 *.html
 combine_layers/matched_layers_timeseries/
+combine_layers/elu_*.tif
