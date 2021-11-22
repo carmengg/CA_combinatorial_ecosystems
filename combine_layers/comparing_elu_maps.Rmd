@@ -1,0 +1,106 @@
+---
+title: "comparing_elu_maps"
+output: html_document
+---
+
+```{r}
+library(raster)
+library(sf)
+
+```
+
+
+## CREATE CHANGE MATRIX
+
+```{r}
+
+# see how category i in raster A changes in raster B  
+# B has categories catsB = (b_1,...,b_n)  (b_i < b_(i+1) integers)
+# ** modified from landcover_comparing_SB.rmd **
+
+change_i <- function(rasterA,i, rasterB,catsB){
+  change <- rasterA
+  change[change!=i] <- NA     # select category A_i
+  change <- change - rasterB  # change between A_i and B (change can equal 0)
+  # if categories for rasters = (b_1,...,b_n}, then change categories = (i-b_1,...,i-b_n)
+  # ex: a pixel in change with value i-b_1 means A changed from category i to category b_1
+  
+  df1 <- data.frame(freq(change)) %>% #count number of pixels in each change category
+    filter(is.na(value)==FALSE)       # remove NAs
+  
+  # -- extend dataframe to include categories A_i did not change to --
+  value <- setdiff( i-catsB ,df1[,1]) # A_i did not change to any of these categories
+  count <- rep(0,each=length(value))
+  df2 <- data.frame(value,count)
+
+  all_change <- bind_rows(df1,df2) %>% 
+    arrange(desc(value))  # recover categories in raster from order
+  return(all_change[,2])
+}
+
+# ------------------------------------------------------------------------------------
+# Returns kxk matrix M = (M_ij)
+# M_ij = # pixels changed from category i in rasterA to category j in rasterB
+# cats = labels for categories
+# ** modified from landcover_comparing_SB.rmd **
+
+change_mtx <- function(rasterA, rasterB){
+  
+  catsA = unique(rasterA)
+  catsB = unique(rasterB)
+  
+  # set up an empty matrix to fill
+  m = length(catsA)
+  n = length(catsB)
+  mtx <- matrix(NA, m, n) 
+  for (i in 1:m) {
+    ## fill i-th row of the matrix
+    mtx[i,] <- change_i(rasterA,catsA[i], rasterB,catsB)
+  } 
+  rownames(mtx) <- catsA
+  colnames(mtx) <- catsB
+  return(mtx)
+}
+
+```
+
+```{r}
+elu1 <- raster(here("combine_layers","elu_SB","elu_2001_SB.tif"))
+elu8 <- raster(here("combine_layers","elu_SB","elu_2008_SB.tif"))
+elu19 <- raster(here("combine_layers","elu_SB","elu_2019_SB.tif"))
+```
+
+
+```{r}
+plot(elu1)
+plot(elu8)
+plot(elu19)
+```
+```{r}
+# 1 : perennial ice/snow  (12)
+# 2 : developed           (21 - 24)
+# 3 : barren              (31)
+# 4 : forest           (41-43)
+# 5 : shrubland        (51,52)
+# 7 : grassland        (71-74)
+# 8 : cropland          (81,82)
+# 9 : wetland           (90,95)
+# 10 : open water         (11)
+# numbers in parenthesis are the codes in original land cover map which have been aggregated under same category
+
+lc_codes <- c(1:5,7:10)
+arid_codes <- 1:3
+clim_codes <- 1:6
+land_codes <- 1:4
+
+categories
+```
+
+```{r}
+codes1 <- unique(elu1)
+codes8 <- unique(elu8)
+codes19 <- unique(elu19)
+
+setdiff(codes1,codes19)
+```
+

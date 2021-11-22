@@ -143,4 +143,7 @@ change_tofrom <- change_df(change_mtx = change819, keep_equals = FALSE)
 change_tofrom %>% arrange(desc(num_pixels))
 
 ```
+```{r}
+change_mtx(lc_2008,lc_2019,10)
+```
 
