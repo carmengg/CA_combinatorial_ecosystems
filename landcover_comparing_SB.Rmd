@@ -93,14 +93,54 @@ rm(change)
 cats <- c("ice/snow","developed","barren","forest","shrub","NULL","grass","crop","wetland","water")
 
 tic("computing change mtx")
-change_mtx(lc_2008,lc_2019,10,cats)
+change819 <- change_mtx(lc_2008,lc_2019,10,cats)
 toc()
+# ~1 min
+change819
 ```
 
 ex of how to read table: entry at row=forest and col=shrub are the #pixels changed from forest to shrub
 
 
 ```{r}
+library(tidyverse)
+change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
+change_tofrom[nrow(change_tofrom)+1,] <- list('forest','developed',10)
+change_tofrom[nrow(change_tofrom)+1,] <- list('forest','developed',10)
+change_tofrom
+```
 
+```{r}
+change819
+
+change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
+m <- nrow(change819)
+n <- ncol(change819)
+for(i in 1:m){
+  from_name <- rownames(change819)[i]
+  for(j in 1:n){
+    to_name <- colnames(change819)[j]
+    change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change819[i,j])
+  }
+}
+
+change_tofrom %>% arrange(desc(num_pixels))
+```
+```{r}
+change_tofrom2 <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
+m <- nrow(change819)
+n <- ncol(change819)
+for(i in 1:m){
+  from_name <- rownames(change819)[i]
+  for(j in 1:n){
+    if(i!=j){
+      to_name <- colnames(change819)[j]
+      change_tofrom2[nrow(change_tofrom2)+1,] <- list(from_name,to_name,change819[i,j])  
+    }
+    
+  }
+}
+
+change_tofrom2 %>% arrange(desc(num_pixels))
 ```
 
