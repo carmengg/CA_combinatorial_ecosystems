@@ -22,10 +22,11 @@ combine_layers <- function(year){
   combined <- clim + 10*arid + 100*forms + 1000*lcover
   
   # mask to CA 
-  ca_shp <- readOGR(here("shapefiles","ca-state-boundary", "CA_State_TIGER2016.shp"))
-  ca_shp <- spTransform(ca_shp, crs(lcover))
+  #ca_shp <- readOGR(here("shapefiles","ca-state-boundary", "CA_State_TIGER2016.shp"))
+  #ca_shp <- spTransform(ca_shp, crs(lcover))
   
-  return(mask(combined,ca_shp))
+  #return(mask(combined,ca_shp))
+  return(combined)
   
 }
 ```
