@@ -34,6 +34,28 @@ combine_layers <- function(year){
 ```{r}
 tic('combining layers')
 elu_2001 <- combine_layers(2001)
-toc('')
+toc()
 ```
 
+```{r}
+plot(elu_2001)
+```
+
+```{r}
+tic('combining layers')
+writeRaster(elu_2001,here("combine_layers","elu_2001.tif"))
+toc()
+```
+
+```{r}
+tic('combining layers')
+elu_2008 <- combine_layers(2008)
+writeRaster(elu_2008,here("combine_layers","elu_2008.tif"))
+toc()
+
+elu_2019 <- combine_layers(2019)
+writeRaster(elu_2019,here("combine_layers","elu_2019.tif"))
+
+plot(elu_2008)
+plot(elu_2019)
+```
