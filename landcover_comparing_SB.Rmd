@@ -98,3 +98,9 @@ toc()
 ```
 
 ex of how to read table: entry at row=forest and col=shrub are the #pixels changed from forest to shrub
+
+
+```{r}
+
+```
+
