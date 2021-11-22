@@ -15,6 +15,7 @@ library(sf)
 library(tictoc)
 ```
 
+## CREATE CHANGE MATRIX
 
 ```{r}
 
@@ -59,6 +60,38 @@ change_mtx <- function(rasterA,rasterB,k, cats=NULL){
 }
 ```
 
+## TURN CHANGE MATRIX INTO DATAFRAME
+
+```{r}
+
+change_df <- function(change_mtx, keep_equals=FALSE){
+  change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
+  m <- nrow(change_mtx)
+  n <- ncol(change_mtx)
+  for(i in 1:m){
+    from_name <- rownames(change_mtx)[i]
+    for(j in 1:n){
+      if(i==j){
+        if(keep_equals==TRUE){
+          to_name <- colnames(change_mtx)[j]
+          change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change_mtx[i,j])    
+        } 
+      }
+      else{
+        to_name <- colnames(change_mtx)[j]
+        change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change_mtx[i,j])    
+        }
+    }
+  }
+  # *** would be good to remove entries with NULL in to or from ***
+  return(change_tofrom)
+}
+```
+
+
+## EXAMPLES
+
+
 ```{r}
 # --- comparing 2008 and 2019 land covers 
 
@@ -102,45 +135,12 @@ change819
 ex of how to read table: entry at row=forest and col=shrub are the #pixels changed from forest to shrub
 
 
-```{r}
-library(tidyverse)
-change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
-change_tofrom[nrow(change_tofrom)+1,] <- list('forest','developed',10)
-change_tofrom[nrow(change_tofrom)+1,] <- list('forest','developed',10)
-change_tofrom
-```
+
 
 ```{r}
-change819
 
-change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
-m <- nrow(change819)
-n <- ncol(change819)
-for(i in 1:m){
-  from_name <- rownames(change819)[i]
-  for(j in 1:n){
-    to_name <- colnames(change819)[j]
-    change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change819[i,j])
-  }
-}
-
+change_tofrom <- change_df(change_mtx = change819, keep_equals = FALSE)
 change_tofrom %>% arrange(desc(num_pixels))
-```
-```{r}
-change_tofrom2 <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
-m <- nrow(change819)
-n <- ncol(change819)
-for(i in 1:m){
-  from_name <- rownames(change819)[i]
-  for(j in 1:n){
-    if(i!=j){
-      to_name <- colnames(change819)[j]
-      change_tofrom2[nrow(change_tofrom2)+1,] <- list(from_name,to_name,change819[i,j])  
-    }
-    
-  }
-}
 
-change_tofrom2 %>% arrange(desc(num_pixels))
 ```
 
