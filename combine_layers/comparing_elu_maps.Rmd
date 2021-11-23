@@ -39,15 +39,14 @@ change_i <- function(rasterA,i, rasterB,catsB){
 }
 
 # ------------------------------------------------------------------------------------
-# Returns kxk matrix M = (M_ij)
+# Returns matrix M = (M_ij)
 # M_ij = # pixels changed from category i in rasterA to category j in rasterB
-# cats = labels for categories
 # ** modified from landcover_comparing_SB.rmd **
 
-change_mtx <- function(rasterA, rasterB){
+change_mtx <- function(rasterA, rasterB, catsA, catsB){
   
-  catsA = unique(rasterA)
-  catsB = unique(rasterB)
+  #catsA = unique(rasterA)
+  #catsB = unique(rasterB)
   
   # set up an empty matrix to fill
   m = length(catsA)
@@ -65,42 +64,26 @@ change_mtx <- function(rasterA, rasterB){
 ```
 
 ```{r}
-elu1 <- raster(here("combine_layers","elu_SB","elu_2001_SB.tif"))
+#elu1 <- raster(here("combine_layers","elu_SB","elu_2001_SB.tif"))
 elu8 <- raster(here("combine_layers","elu_SB","elu_2008_SB.tif"))
 elu19 <- raster(here("combine_layers","elu_SB","elu_2019_SB.tif"))
+
+cats8 <- unique(elu8)
+cats19 <- unique(elu19)
 ```
 
 
 ```{r}
-plot(elu1)
-plot(elu8)
-plot(elu19)
-```
-```{r}
-# 1 : perennial ice/snow  (12)
-# 2 : developed           (21 - 24)
-# 3 : barren              (31)
-# 4 : forest           (41-43)
-# 5 : shrubland        (51,52)
-# 7 : grassland        (71-74)
-# 8 : cropland          (81,82)
-# 9 : wetland           (90,95)
-# 10 : open water         (11)
-# numbers in parenthesis are the codes in original land cover map which have been aggregated under same category
-
-lc_codes <- c(1:5,7:10)
-arid_codes <- 1:3
-clim_codes <- 1:6
-land_codes <- 1:4
-
-categories
+trial <- change_mtx(elu8,elu19,cats8,cats19)
+trial
 ```
 
-```{r}
-codes1 <- unique(elu1)
-codes8 <- unique(elu8)
-codes19 <- unique(elu19)
 
-setdiff(codes1,codes19)
+```{r}
+lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
+lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
+
+check <- change_mtx(lc_2008,lc_2019, unique(lc_2008),unique(lc_2019))
+check  # good! agrees with previous LULC comparison and gets rid of empty categories
 ```
 
