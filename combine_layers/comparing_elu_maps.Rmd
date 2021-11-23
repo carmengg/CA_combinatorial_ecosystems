@@ -43,10 +43,10 @@ change_i <- function(rasterA,i, rasterB,catsB){
 # M_ij = # pixels changed from category i in rasterA to category j in rasterB
 # ** modified from landcover_comparing_SB.rmd **
 
-change_mtx <- function(rasterA, rasterB, catsA, catsB){
+change_mtx <- function(rasterA, rasterB){
   
-  #catsA = unique(rasterA)
-  #catsB = unique(rasterB)
+  catsA = unique(rasterA)
+  catsB = unique(rasterB)
   
   # set up an empty matrix to fill
   m = length(catsA)
@@ -62,6 +62,35 @@ change_mtx <- function(rasterA, rasterB, catsA, catsB){
 }
 
 ```
+
+
+## TURN CHANGE MATRIX INTO DATAFRAME
+
+```{r}
+# ** modified from landcover_comparing_SB.rmd **
+change_df <- function(change_mtx, keep_equals=FALSE){
+  
+  change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
+  m <- nrow(change_mtx)
+  n <- ncol(change_mtx)
+  for(i in 1:m){
+    from_name <- rownames(change_mtx)[i]
+    for(j in 1:n){
+      to_name <- colnames(change_mtx)[j]
+      if(from_name == to_name){
+        if(keep_equals==TRUE){
+          change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change_mtx[i,j])    
+        } 
+      }
+      else{
+        change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change_mtx[i,j])    
+        }
+    }
+  }
+  return(change_tofrom)
+}
+```
+
 
 ```{r}
 #elu1 <- raster(here("combine_layers","elu_SB","elu_2001_SB.tif"))
@@ -85,5 +114,14 @@ lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
 
 check <- change_mtx(lc_2008,lc_2019, unique(lc_2008),unique(lc_2019))
 check  # good! agrees with previous LULC comparison and gets rid of empty categories
+```
+
+```{r}
+change_df(check) %>% arrange(desc(num_pixels))
+```
+
+```{r}
+change_df(check,keep_equals = TRUE) %>% arrange(desc(num_pixels))
+
 ```
 
