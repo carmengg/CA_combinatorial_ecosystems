@@ -118,10 +118,42 @@ check  # good! agrees with previous LULC comparison and gets rid of empty catego
 
 ```{r}
 change_df(check) %>% arrange(desc(num_pixels))
+change_df(check,keep_equals = TRUE) %>% arrange(desc(num_pixels))
 ```
 
 ```{r}
-change_df(check,keep_equals = TRUE) %>% arrange(desc(num_pixels))
+change_df(trial) %>% arrange(desc(num_pixels))
 
+```
+```{r}
+changedf_819 <- change_df(trial) %>% arrange(desc(num_pixels))
+changedf_819$from <- as.integer(changedf_819$from)
+changedf_819$to <- as.integer(changedf_819$to)
+changedf_819
+write.csv(changedf_819, here("combine_layers","change_08_to_19.csv"))
+```
+
+
+```{r}
+df1 <- changedf_819
+df1 %>%
+  filter(num_pixels!=0) %>%
+  mutate( diff_clim = abs(to%%10 - from%%10)) %>% 
+  mutate( diff_arid = (to - to%%10)%%100 - (from - from%%10)%%100 ) %>% # negative => more arid
+  #mutate( diff_forms = abs((to - to%%100)%%1000 - (from - from%%100)%%1000 )) # landform layer does not change over years
+  mutate( diff_lulc = abs((to - to%%1000)%%10000 - (from - from%%1000)%%10000 )) %>% 
+  select(!diff_clim) %>% 
+  filter(diff_arid!=0, diff_lulc!=0)
+
+
+# 1 : perennial ice/snow  (12)
+# 2 : developed           (21 - 24)
+# 3 : barren              (31)
+# 4 : forest           (41-43)
+# 5 : shrubland        (51,52)
+# 7 : grassland        (71-74)
+# 8 : cropland          (81,82)
+# 9 : wetland           (90,95)
+# 10 : open water         (11)
 ```
 
