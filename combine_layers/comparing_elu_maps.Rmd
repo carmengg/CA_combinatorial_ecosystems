@@ -157,3 +157,17 @@ df1 %>%
 # 10 : open water         (11)
 ```
 
+
+```{r}
+ca_elu8 <- raster(here("combine_layers","elu_2008.tif"))
+ca_elu19 <- raster(here("combine_layers","elu_2019.tif"))
+
+ca_check <- change_mtx(ca_elu8,ca_elu19)
+ca_changedf <- change_df(ca_check) %>% arrange(desc(num_pixels))
+ca_changedf$from <- as.integer(ca_changedf$from)
+ca_changedf$to <- as.integer(ca_changedf$to)
+
+write.csv(ca_changedf, here("combine_layers","ca_change_08_to_19.csv"))
+# *** had to run this in the server ***
+```
+
