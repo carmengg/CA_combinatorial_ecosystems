@@ -6,7 +6,8 @@ output: html_document
 ```{r}
 library(raster)
 library(sf)
-
+library(here)
+library(tidyverse)
 ```
 
 
@@ -22,7 +23,7 @@ change_i <- function(rasterA,i, rasterB,catsB){
   change <- rasterA
   change[change!=i] <- NA     # select category A_i
   change <- change - rasterB  # change between A_i and B (change can equal 0)
-  # if categories for rasters = (b_1,...,b_n}, then change categories = (i-b_1,...,i-b_n)
+  # if categories for rasters = (b_1,...,b_n), then change categories = (i-b_1,...,i-b_n)
   # ex: a pixel in change with value i-b_1 means A changed from category i to category b_1
   
   df1 <- data.frame(freq(change)) %>% #count number of pixels in each change category
@@ -87,6 +88,14 @@ change_df <- function(change_mtx, keep_equals=FALSE){
         }
     }
   }
+  
+  change_tofrom <- change_tofrom %>% 
+    arrange(desc(num_pixels)) %>% 
+    filter(num_pixels!=0)
+  
+  change_tofrom$from <- as.integer(change_tofrom$from)
+  change_tofrom$to <- as.integer(change_tofrom$to)
+    
   return(change_tofrom)
 }
 ```
@@ -112,7 +121,7 @@ trial
 lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
 lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
 
-check <- change_mtx(lc_2008,lc_2019, unique(lc_2008),unique(lc_2019))
+check <- change_mtx(lc_2008,lc_2019)
 check  # good! agrees with previous LULC comparison and gets rid of empty categories
 ```
 
@@ -169,5 +178,13 @@ ca_changedf$to <- as.integer(ca_changedf$to)
 
 write.csv(ca_changedf, here("combine_layers","ca_change_08_to_19.csv"))
 # *** had to run this in the server ***
+```
+
+
+```{r}
+change <-read.csv(here("combine_layers","change_08_to_19.csv"))
+change %>% 
+  filter(num_pixels>10)%>%
+  select(!X)
 ```
 
