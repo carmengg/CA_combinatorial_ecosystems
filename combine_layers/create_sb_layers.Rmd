@@ -1,0 +1,67 @@
+---
+title: "create_sb_layers"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(rgdal)
+library(sf)
+library(here)
+library(here)
+```
+
+
+```{r}
+year<-2019
+root <- here('combine_layers','ca_matched_layers_timeseries')
+clim <- raster(paste(root,'/climate/ca_clim_match_',year,'.tif',sep=""))
+arid <- raster(paste(root,'/aridity/ca_arid_match_',year,'.tif',sep=""))
+lcover <- raster(paste(root,'/landcover/ca_landcover_regions_match_',year,'.tif',sep=""))
+  
+  
+# mask to CA 
+sb_shp <- readOGR(here("shapefiles","sb-county-boundary", "data","commondata","county_boundaries","SB_only.shp"))
+sb_shp <- spTransform(sb_shp, crs(lcover))
+sb_bbox <-st_bbox(sb_shp)
+  
+sb_clim <- mask(crop(x= clim, y=sb_bbox), sb_shp)
+sb_arid <- mask(crop(x= arid, y=sb_bbox), sb_shp)
+sb_lcover <- mask(crop(x= lcover, y=sb_bbox), sb_shp)
+
+plot(sb_clim)
+plot(sb_arid)
+plot(sb_lcover)
+
+```
+
+
+```{r}
+
+writeRaster(sb_clim, filename=here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "climate",
+                                   paste("sb_clim_match_",year,".tif",sep="")))
+writeRaster(sb_arid, filename=here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "aridity",
+                                   paste("sb_arid_match_",year,".tif",sep="")))
+writeRaster(sb_lcover, filename=here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "landcover",
+                                   paste("sb_landcover_regions_match_",year,".tif",sep="")))
+```
+
+
+```{r}
+forms <- raster(paste(root,'/landforms/ca_landforms_match.tif',sep=""))
+
+sb_forms <- mask(crop(x= forms, y=sb_bbox), sb_shp)
+writeRaster(sb_forms, filename=here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "landforms",
+                                   "sb_landforms_match.tif"))
+```
+
