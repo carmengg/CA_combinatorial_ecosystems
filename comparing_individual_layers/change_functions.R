@@ -4,9 +4,9 @@
 #library(tidyverse)
 
 #*****************************************************************
-# COPIED FROM comparing_elu_maps.Rmd
+# START COPIED FROM comparing_elu_maps.Rmd
 #*****************************************************************
-#*
+#
 # -----------------------------------------------------------------------------
 
 # see how category i in raster A changes in raster B  
@@ -89,6 +89,10 @@ change_df <- function(change_mtx, keep_equals=FALSE){
   return(change_tofrom)
 }
 
+
+#*****************************************************************
+# END COPIED FROM comparing_elu_maps.Rmd
+#*****************************************************************
 # -----------------------------------------------------------------------------
 
 raster_change_ij <- function(rasterA,i, rasterB,j){
@@ -101,5 +105,43 @@ raster_change_ij <- function(rasterA,i, rasterB,j){
   change[change==j] <- 1
   return(change)
 }
+
+# -----------------------------------------------------------------------------
+# cats_B = ascending order integer vector 
+# cats_names = string vector with names of categories in rasterB U rasterA
+raster_change_i <- function(rasterA,i, rasterB, cats_B, cats_names=NULL){
+  change <- rasterA
+  change[change!=i] <- NA     # select category A_i
+  change[change==i] <- 1
+  change <- change*rasterB  # change between A_i and B
+  
+  change_layers <- layerize(change, falseNA= TRUE)
+  cats_change <- as.integer(substr(names(arid_layers),2,2))  #names in layerize = Xn, where n is the original cat
+  
+  result_stack <- stack()
+  # insert empty and change layers in correct order
+  change[is.na(change)==FALSE]<-NA # empty layer
+  for( k in cats_B){ # assumes cats_B and cats_change are ordered (ascending)
+    if(k %in% cats_change){
+      result_stack <- addLayer(result_stack, change_layers[[1]] )
+      change_layers <- dropLayer(change_layers,1)
+      cats_change <- cats_change[-k] # remove k from vector
+    }
+    else{
+      result_stack <- addLayer(result_stack, change )
+    }
+    
+  }
+  
+  # update names of layers
+  names(change_layers) <- paste(cats_names[i],"_2_",cats_names, sep="")
+  
+  return(change_layers)
+}
+
+# -----------------------------------------------------------------------------
+
+
+
 
 
