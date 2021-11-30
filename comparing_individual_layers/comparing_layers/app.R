@@ -18,7 +18,7 @@ raster_files <-list.files(path = here('combine_layers',
 aridity <- raster::stack(raster_files)
 
 raster_files <-list.files(path = here('combine_layers',
-                                      'sb_matched_layers_timeseries',
+                                      'ca_matched_layers_timeseries',
                                       'climate'),
                           full.names = TRUE)
 
@@ -113,8 +113,8 @@ ui <- fluidPage(
                                                 "2019" = 3),
                                  selected = 3
                      ),
-                     radioButtons(inputId = "tab2_i",
-                                  label = h3("From"),
+                     radioButtons(inputId = "tab2_j",
+                                  label = h3("To"),
                                   choices = list("(1) polar" = 1,
                                                  "(2) boreal" = 2,
                                                  "(3) cold temperate" = 3,
@@ -164,27 +164,19 @@ server <- function(input, output) {
         plot(sb_shp, add=TRUE)
     })
     #--------------------------------------------------------------
-    # --- TAB 1 : aridity 
-    clim_from <- reactive({
-        k <- as.integer(input$tab2_year1)
-        climate[[k]]
-    })
-    
-    clim_to <- reactive({
-        # ***** prevent from comparing with year2 < year1
-        k <- as.integer(input$tab2_year2)
-        climate[[k]]
-    })
+    # --- TAB 2 : climate 
     
     tab2_result_raster <- reactive({
-        i <- as.integer(input$tab1_i)
-        j <- as.integer(input$tab1_j)
-        raster_change_ij(clim_from(), i, clim_to(), j)    
+        raster_from <- climate[[as.integer(input$tab2_year1)]]
+        raster_to <- climate[[as.integer(input$tab2_year2)]]
+        i <- as.integer(input$tab2_i)
+        j <- as.integer(input$tab2_j)
+        raster_change_ij(raster_from, i, raster_to, j)    
     })
     
     output$tab2_plot <- renderPlot({
         plot(tab2_result_raster())
-        plot(sb_shp, add=TRUE)
+        #plot(sb_shp, add=TRUE)
     })
 }
 
