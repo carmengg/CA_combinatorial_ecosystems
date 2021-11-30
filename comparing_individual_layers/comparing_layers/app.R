@@ -3,27 +3,40 @@ library(raster)
 library(sf)
 library(here)
 library(tidyverse)
+library(rgdal)
 
 
 # ----------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------
-# ***************************LOADING RASTERS **************************************
+# *************************** LOADING RASTERS **************************************
 
-
-clim <- raster(paste(root,'/climate/ca_clim_match_',year,'.tif',sep=""))
-arid <- raster(paste(root,'/aridity/ca_arid_match_',year,'.tif',sep=""))
-forms <- raster(paste(root,'/landforms/ca_landforms_match.tif',sep=""))
-lcover <- raster(paste(root,'/landcover/ca_landcover_regions_match_',year,'.tif',sep=""))
-
-here('combine_layers','matched_layers_timeseries')
 raster_files <-list.files(path = here('combine_layers',
-                                      'matched_layers_timeseries',
+                                      'sb_matched_layers_timeseries',
                                       'aridity'),
                           full.names = TRUE)
 
-ca_aridity <- raster::stack(raster_files)
+aridity <- raster::stack(raster_files)
 
+raster_files <-list.files(path = here('combine_layers',
+                                      'sb_matched_layers_timeseries',
+                                      'climate'),
+                          full.names = TRUE)
 
+climate <- raster::stack(raster_files)
+
+# ----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
+# *************************** LOADING CHANGE FUNCTIONS *****************************
+
+source(here("comparing_individual_layers","change_functions.R"))
+
+# ----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
+# *************************** LOADING SHAPEFILES **********************************
+
+sb_shp <- readOGR(here("shapefiles","sb-county-boundary", "data","commondata","county_boundaries","SB_only.shp"))
+sb_shp <- spTransform(sb_shp, crs(aridity[[1]]))
+    
 # ----------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------
 # *************************** USER INTERFACE **************************************
@@ -32,28 +45,92 @@ ca_aridity <- raster::stack(raster_files)
 ui <- fluidPage(
     navbarPage("Comparing individual layers",
         # ----------------------------------------------------------------------------------
-        # --- ARIDITY TAB ---  
+        # --- tab1: ARIDITY ---  
         tabPanel("aridity",
             sidebarLayout(
                 sidebarPanel(
+                    selectInput("tab1_year1", 
+                                label = h3("Initial year"), 
+                                choices = list("2001" = 1, 
+                                               "2008" = 2, 
+                                               "2019" = 3),
+                                selected=2
+                                ),
+                    radioButtons(inputId = "tab1_i", 
+                                 label = h3("From"),
+                                 choices = list("(1) desertic" = 1, 
+                                                "(2) dry" = 2, 
+                                                "(3) humid" = 3),
+                                 selected = 3
+                                 ),
+                    
+                    selectInput("tab1_year2", 
+                                label = h3("Compare with year"), 
+                                choices = list("2001" = 1, 
+                                               "2008" = 2, 
+                                               "2019" = 3),
+                                selected = 3
+                    ),
+                    radioButtons(inputId = "tab1_j", 
+                                 label = h3("To"),
+                                 choices = list("(1) desertic" = 1, 
+                                                "(2) dry" = 2, 
+                                                "(3) humid" = 3),
+                                 selected = 2
+                    )
                 ),
-                mainPanel(
+                mainPanel(align = "center",
+                          plotOutput("tab1_plot")
                 )
             )
         ), # tab1 closed
         # ----------------------------------------------------------------------------------
-        # --- CLIMATE TAB ---  
+        # --- tab2: CLIMATE ---  
         tabPanel("climate",
-                 sidebarLayout(
-                     sidebarPanel(
+                 sidebarPanel(
+                     selectInput("tab2_year1",
+                                 label = h3("Initial year"),
+                                 choices = list("2001" = 1,
+                                                "2008" = 2,
+                                                "2019" = 3),
+                                 selected=2
                      ),
-                     mainPanel(
+                     radioButtons(inputId = "tab2_i",
+                                  label = h3("From"),
+                                  choices = list("(1) polar" = 1,
+                                                 "(2) boreal" = 2,
+                                                 "(3) cold temperate" = 3,
+                                                 "(4) warm temperate" = 4,
+                                                 "(5) subtropical" = 5,
+                                                 "(6) tropical" = 6),
+                                  selected = 3
+                     ),
+
+                     selectInput("tab2_year2",
+                                 label = h3("Compare with year"),
+                                 choices = list("2001" = 1,
+                                                "2008" = 2,
+                                                "2019" = 3),
+                                 selected = 3
+                     ),
+                     radioButtons(inputId = "tab2_i",
+                                  label = h3("From"),
+                                  choices = list("(1) polar" = 1,
+                                                 "(2) boreal" = 2,
+                                                 "(3) cold temperate" = 3,
+                                                 "(4) warm temperate" = 4,
+                                                 "(5) subtropical" = 5,
+                                                 "(6) tropical" = 6),
+                                  selected = 3
                      )
+                 ),
+                 mainPanel(align = "center",
+                           plotOutput("tab2_plot")
                  )
         ), # tab2 closed
         
         # ----------------------------------------------------------------------------------
-        # --- LAND COVER TAB ---  
+        # --- tab3: LAND COVER ---  
         tabPanel("land cover",
                  sidebarLayout(
                      sidebarPanel(
@@ -71,14 +148,43 @@ ui <- fluidPage(
 # *************************** SERVER **************************************
 
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+    #--------------------------------------------------------------
+    # --- TAB 1 : aridity 
+    
+    tab1_result_raster <- reactive({
+        arid_from <- aridity[[as.integer(input$tab1_year1)]]
+        arid_to <- aridity[[as.integer(input$tab1_year2)]]
+        i <- as.integer(input$tab1_i)
+        j <- as.integer(input$tab1_j)
+        raster_change_ij(arid_from, i, arid_to, j)    
+    })
+    
+    output$tab1_plot <- renderPlot({
+        plot(tab1_result_raster())
+        plot(sb_shp, add=TRUE)
+    })
+    #--------------------------------------------------------------
+    # --- TAB 1 : aridity 
+    clim_from <- reactive({
+        k <- as.integer(input$tab2_year1)
+        climate[[k]]
+    })
+    
+    clim_to <- reactive({
+        # ***** prevent from comparing with year2 < year1
+        k <- as.integer(input$tab2_year2)
+        climate[[k]]
+    })
+    
+    tab2_result_raster <- reactive({
+        i <- as.integer(input$tab1_i)
+        j <- as.integer(input$tab1_j)
+        raster_change_ij(clim_from(), i, clim_to(), j)    
+    })
+    
+    output$tab2_plot <- renderPlot({
+        plot(tab2_result_raster())
+        plot(sb_shp, add=TRUE)
     })
 }
 
