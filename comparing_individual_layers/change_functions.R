@@ -98,6 +98,7 @@ raster_change_ij <- function(rasterA,i, rasterB,j){
   
   change <- change * rasterB
   change[change!=j] <- NA
+  change[change==j] <- 1
   return(change)
 }
 
