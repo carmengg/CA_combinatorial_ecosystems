@@ -61,3 +61,27 @@ rownames(mtx_arid_8_19) <- c("dry", "moist")
 mtx_arid_8_19
 ```
 
+
+```{r}
+year<- 2001
+clim1 <- raster(here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "climate",
+                                   paste("sb_clim_match_",year,".tif",sep="")))
+
+year<- 2008
+clim8 <- raster(here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "climate",
+                                   paste("sb_clim_match_",year,".tif",sep="")))
+year<-2019
+clim19 <- raster(here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "climate",
+                                   paste("sb_clim_match_",year,".tif",sep="")))
+rm(year)
+
+plot(clim1)
+plot(clim8)
+plot(clim19)
+```
