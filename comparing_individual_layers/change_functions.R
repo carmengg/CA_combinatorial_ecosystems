@@ -123,22 +123,16 @@ raster_change_i <- function(rasterA,i, cat_i_name=NULL, rasterB, cats_B, cats_na
   change[is.na(change)==FALSE]<-NA # empty layer
   for( k in cats_B){ # assumes cats_B and cats_change are ordered (ascending)
     if(k %in% cats_change){
-#      print(k)
       result_stack <- addLayer(result_stack, change_layers[[1]] )
-#      print(names(result_stack))
       if(nlayers(change_layers)>1){  # cannot remove layer from a single raster
         change_layers <- dropLayer(change_layers,1)
         cats_change <- cats_change[-1] # remove k from vector
       }
-#      print(names(change_layers))
-#      print(cats_change)
-#      print('----------------------------')
     }
     else{
       result_stack <- addLayer(result_stack, change )
     }
   }
-  
   # update names of layers
   if(!is.null(cats_names)){
     names(result_stack) <- paste(cat_i_name,"_2_",cats_names, sep="")  
@@ -149,7 +143,24 @@ raster_change_i <- function(rasterA,i, cat_i_name=NULL, rasterB, cats_B, cats_na
 
 # -----------------------------------------------------------------------------
 
-
+raster_change_mtx <- function(rasterA, catsA=NULL, catsA_names=NULL,
+                              rasterB, catsB=NULL, catsB_names=NULL){
+  
+  # if(is.null(catsA)){  # **** or catsB==NULL
+  #   catsA = unique(rasterA)
+  #   catsB = unique(rasterB)  
+  # }
+  
+  # set up an empty stack to fill
+  result_stack <- stack()
+  m = length(catsA)
+  for (i in 1:m) {
+    result_stack <- stack(result_stack,
+                          raster_change_i(rasterA, catsA[i], catsA_names[i], rasterB, catsB, catsB_names))
+  } 
+  
+  return(result_stack)
+}
 
 
 

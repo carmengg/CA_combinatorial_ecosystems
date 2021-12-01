@@ -10,17 +10,13 @@ library(raster)
 library(sf)
 library(here)
 library(tidyverse)
+```
 
+```{r}
 source(here("comparing_individual_layers","change_functions.R"))
 ```
 
 ```{r}
-year<- 2001
-arid1 <- raster(here("combine_layers",
-                                   "sb_matched_layers_timeseries",
-                                   "aridity",
-                                   paste("sb_arid_match_",year,".tif",sep="")))
-
 year<- 2008
 arid8 <- raster(here("combine_layers",
                                    "sb_matched_layers_timeseries",
@@ -34,8 +30,8 @@ arid19 <- raster(here("combine_layers",
 rm(year)
 
 #plot(arid1)
-#plot(arid8)
-#plot(arid19)
+plot(arid8, xlab= '2008')
+plot(arid19, xlab='2019')
 ```
 
 
@@ -43,15 +39,6 @@ rm(year)
 mtx_arid_8_19 <-change_mtx(arid8, arid19)
 df_arid_8_19 <-change_df(mtx_arid_8_19,keep_equals = TRUE)
 
-mtx_arid_1_19 <-change_mtx(arid1, arid19)
-df_arid_1_19 <-change_df(mtx_arid_1_19,keep_equals = TRUE)
-
-mtx_arid_1_8 <-change_mtx(arid1, arid8)
-df_arid_1_8 <-change_df(mtx_arid_1_8,keep_equals = TRUE)
-
-mtx_arid_8_19
-mtx_arid_1_19
-mtx_arid_1_8
 ```
 
 
@@ -63,25 +50,28 @@ mtx_arid_8_19
 
 
 ```{r}
-year<- 2001
-clim1 <- raster(here("combine_layers",
-                                   "sb_matched_layers_timeseries",
-                                   "climate",
-                                   paste("sb_clim_match_",year,".tif",sep="")))
+arid_layers <- layerize(arid1)
 
-year<- 2008
-clim8 <- raster(here("combine_layers",
-                                   "sb_matched_layers_timeseries",
-                                   "climate",
-                                   paste("sb_clim_match_",year,".tif",sep="")))
-year<-2019
-clim19 <- raster(here("combine_layers",
-                                   "sb_matched_layers_timeseries",
-                                   "climate",
-                                   paste("sb_clim_match_",year,".tif",sep="")))
-rm(year)
-
-plot(clim1)
-plot(clim8)
-plot(clim19)
 ```
+
+```{r}
+cats_names <- c('dry','moist')
+cat_i_name="moist"
+#(rasterA,i, rasterB, cats_B, cats_names=NULL)
+result <- raster_change_i(arid8, 3, cat_i_name="moist", 
+                          arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
+plot(result)
+```
+
+
+
+```{r}
+result_mtx <- raster_change_mtx(arid8, c(2,3), cats_names,
+                                arid19, c(2,3), cats_names)
+```
+
+```{r}
+result2 <- raster_change_i(arid8, 2, cat_i_name="dry", 
+                          arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
+```
+
