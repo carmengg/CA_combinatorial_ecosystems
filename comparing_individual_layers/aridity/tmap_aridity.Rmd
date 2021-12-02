@@ -1,0 +1,72 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(sf)
+library(rgdal)
+library(here)
+library(tidyverse)
+library(tictoc)
+library(tmap)
+```
+
+
+```{r}
+# Initial rasters
+year<- 2008
+arid8 <- raster(here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "aridity",
+                                   paste("sb_arid_match_",year,".tif",sep="")))
+year<-2019
+arid19 <- raster(here("combine_layers",
+                                   "sb_matched_layers_timeseries",
+                                   "aridity",
+                                   paste("sb_arid_match_",year,".tif",sep="")))
+rm(year)
+
+#plot(arid8, main= '2008')
+#plot(arid19, main='2019')
+```
+
+
+
+```{r}
+# getting moist_2_dry
+moist_2_dry <- arid8
+moist_2_dry[moist_2_dry!=3] <- NA
+aux <- arid19
+aux[aux != 2] <- NA
+moist_2_dry <- moist_2_dry * aux
+
+plot(moist_2_dry)
+freq(moist_2_dry)
+```
+
+```{r}
+polys <- rasterToPolygons(moist_2_dry)
+plot(polys)
+```
+
+
+```{r}
+polys2 <- rasterToPolygons(moist_2_dry, dissolve=TRUE)
+```
+
+```{r}
+
+# create interactive map
+tmap_mode(mode = "view")
+
+tm_shape(polys2) +
+  tm_basemap("Esri.WorldImagery")+  # fix base map
+  tm_fill("white", alpha=0.4)
+  tm_borders("white", lwd = 1) +
+  tm_polygons("polys2", palette = "Oranges", alpha=0.8) 
+```
+
