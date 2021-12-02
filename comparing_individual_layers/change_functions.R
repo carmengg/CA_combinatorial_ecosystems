@@ -59,7 +59,7 @@ change_mtx <- function(rasterA, rasterB){
 
 # -----------------------------------------------------------------------------
 # ** modified from landcover_comparing_SB.rmd **
-change_df <- function(change_mtx, keep_equals=FALSE){
+change_df <- function(change_mtx, keep_equals=FALSE, remove_zeros = TRUE){
   
   change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
   m <- nrow(change_mtx)
@@ -81,10 +81,20 @@ change_df <- function(change_mtx, keep_equals=FALSE){
   
   change_tofrom <- change_tofrom %>% 
     arrange(desc(num_pixels)) %>% 
-    filter(num_pixels!=0)
+    
+  if(remove_zeros){
+    change_tofrom <- change_tofrom %>% filter(num_pixels!=0)
+  }
   
-  change_tofrom$from <- as.integer(change_tofrom$from)
-  change_tofrom$to <- as.integer(change_tofrom$to)
+  # if to/from are category numbers, make them integers,
+  # otherwise keep them as is (most likely they're characters)
+  if(!is.na(as.numeric(change_tofrom$from[1]))){
+    change_tofrom$from <- as.integer(change_tofrom$from)  
+  }
+  if(!is.na(as.numeric(change_tofrom$to[1]))){
+    change_tofrom$to <- as.integer(change_tofrom$to)
+  }
+  
   
   return(change_tofrom)
 }

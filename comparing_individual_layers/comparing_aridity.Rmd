@@ -118,6 +118,24 @@ ca_arid19 <- raster(here("combine_layers",
 ```
 
 ```{r}
+# finding number of pixels changing from categories in arid8 to categories in arid19
+tic('ca change_mtx time')
+ca_mtx_arid_8_19 <-change_mtx(ca_arid8, ca_arid19)
+toc()
+
+cats_names <- c('desert','dry','moist')
+colnames(ca_mtx_arid_8_19) <- cats_names
+rownames(ca_mtx_arid_8_19) <- cats_names
+mtx_arid_8_19
+```
+
+```{r}
+# create oredered data frame from change_mtx
+df_arid_8_19 <-change_df(ca_mtx_arid_8_19,keep_equals = FALSE)
+df_arid_8_19
+```
+
+```{r}
 cats_names <- c('desert','dry','moist')
 tic('raster_change_mtx (california aridity)')
 ca_results <- raster_change_mtx(ca_arid8, c(1,2,3), cats_names,
@@ -142,6 +160,8 @@ plot(ca_results)
 # }
 ```
 
+### Mapping with CA boundary
+
 ```{r}
 ca_shp <- readOGR(here("shapefiles",
                        "ca-state-boundary",
@@ -154,11 +174,12 @@ ca_shp <- spTransform(ca_shp, crs(result_mtx))
 names <- names(ca_results)
 
 for (i in 1:9){
-  plot(ca_results[[i]], xlab=names[i] )
+  plot(ca_results[[i]], main=names[i] )
   plot(ca_shp,add=TRUE)
 }
 
 ```
+
 ```{r}
 par(mfrow = c(3, 3))
 names <- names(ca_results)
