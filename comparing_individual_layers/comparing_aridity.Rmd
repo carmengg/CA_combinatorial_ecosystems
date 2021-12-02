@@ -8,15 +8,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(raster)
 library(sf)
+library(rgdal)
 library(here)
 library(tidyverse)
+library(tictoc)
 ```
 
 ```{r}
+# library with all the change comparison functions
 source(here("comparing_individual_layers","change_functions.R"))
 ```
 
+
+## Exploring aridity changes in SB county, 2008 to 2019
+
+
 ```{r}
+# Initial rasters
 year<- 2008
 arid8 <- raster(here("combine_layers",
                                    "sb_matched_layers_timeseries",
@@ -29,49 +37,139 @@ arid19 <- raster(here("combine_layers",
                                    paste("sb_arid_match_",year,".tif",sep="")))
 rm(year)
 
-#plot(arid1)
-plot(arid8, xlab= '2008')
-plot(arid19, xlab='2019')
+plot(arid8, main= '2008')
+plot(arid19, main='2019')
 ```
 
+### Counting number of pixels changed
 
 ```{r}
+# finding number of pixels changing from categories in arid8 to categories in arid19
+tic('change_mtx time')
 mtx_arid_8_19 <-change_mtx(arid8, arid19)
-df_arid_8_19 <-change_df(mtx_arid_8_19,keep_equals = TRUE)
+toc()
 
-```
-
-
-```{r}
 colnames(mtx_arid_8_19) <- c("dry", "moist")
 rownames(mtx_arid_8_19) <- c("dry", "moist")
 mtx_arid_8_19
 ```
 
 
-```{r}
-arid_layers <- layerize(arid1)
 
+```{r}
+# create oredered data frame from change_mtx
+df_arid_8_19 <-change_df(mtx_arid_8_19,keep_equals = TRUE)
+df_arid_8_19
 ```
 
+### Finding change rasters
+
 ```{r}
+# create rasters with the change from category i to cats_B in rasterB
 cats_names <- c('dry','moist')
-cat_i_name="moist"
-#(rasterA,i, rasterB, cats_B, cats_names=NULL)
-result <- raster_change_i(arid8, 3, cat_i_name="moist", 
-                          arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
-plot(result)
+cat_i_name = "moist"
+
+# Example 1:
+tic('raster_change_i (dry_2_other)')
+dry_change <- raster_change_i(rasterA=arid8, i=2, cat_i_name="dry", 
+                              rasterB=arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
+toc()
+
+plot(dry_change)
+```
+
+```{r}
+# Example 2:
+tic('raster_change_i (moist_2_other)')
+moist_change <- raster_change_i(rasterA=arid8, i=3, cat_i_name="moist", 
+                                rasterB=arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
+toc()
+plot(moist_change)
 ```
 
 
 
 ```{r}
-result_mtx <- raster_change_mtx(arid8, c(2,3), cats_names,
+# Generating all change rasters
+
+tic('raster_change_mtx')
+change_8_to_19 <- raster_change_mtx(arid8, c(2,3), cats_names,
                                 arid19, c(2,3), cats_names)
+toc()
+
+plot(change_8_to_19)
+```
+
+
+##  Exploring aridity changes CA, 2008 to 2019
+
+```{r}
+year<- 2008
+ca_arid8 <- raster(here("combine_layers",
+                                   "ca_matched_layers_timeseries",
+                                   "aridity",
+                                   paste("ca_arid_match_",year,".tif",sep="")))
+year<-2019
+ca_arid19 <- raster(here("combine_layers",
+                                   "ca_matched_layers_timeseries",
+                                   "aridity",
+                                   paste("ca_arid_match_",year,".tif",sep="")))
+
 ```
 
 ```{r}
-result2 <- raster_change_i(arid8, 2, cat_i_name="dry", 
-                          arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
+cats_names <- c('desert','dry','moist')
+tic('raster_change_mtx (california aridity)')
+ca_results <- raster_change_mtx(ca_arid8, c(1,2,3), cats_names,
+                                ca_arid19, c(1,2,3), cats_names)
+toc()
 ```
+
+
+```{r}
+ca_results
+plot(ca_results)
+```
+
+```{r}
+# save rasters
+
+# for(i in 1:9){
+#   name <- paste(names(ca_results)[i],".tif",sep="")
+#   writeRaster(ca_results[[i]], here("comparing_individual_layers",
+#                                     "ca_aridity_comparisons",
+#                                     name))  
+# }
+```
+
+```{r}
+ca_shp <- readOGR(here("shapefiles",
+                       "ca-state-boundary",
+                       "CA_State_TIGER2016.shp"))
+
+ca_shp <- spTransform(ca_shp, crs(result_mtx))
+```
+
+```{r}
+names <- names(ca_results)
+
+for (i in 1:9){
+  plot(ca_results[[i]], xlab=names[i] )
+  plot(ca_shp,add=TRUE)
+}
+
+```
+```{r}
+par(mfrow = c(3, 3))
+names <- names(ca_results)
+
+for (i in 1:9){
+  plot(ca_results[[i]], 
+       main=names[i], 
+       axes=FALSE,
+       legend=FALSE)
+  plot(ca_shp,add=TRUE)
+}
+```
+
 
