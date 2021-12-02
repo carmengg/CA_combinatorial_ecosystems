@@ -11,3 +11,4 @@ combine_layers/ca_matched_layers_timeseries/
 combine_layers/sb_matched_layers_timeseries/
 combine_layers/elu_*.tif
 combine_layers/elu_SB
+comparing_individual_layers/ca_aridity_comparisons/
