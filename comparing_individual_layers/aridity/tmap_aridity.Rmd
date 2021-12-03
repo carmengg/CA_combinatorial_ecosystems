@@ -70,3 +70,19 @@ tm_shape(polys2) +
   tm_polygons("polys2", palette = "Oranges", alpha=0.8) 
 ```
 
+
+```{r}
+dry_2_desert <- raster(here("comparing_individual_layers",
+                                   "aridity",
+                                   "ca_aridity_comparisons",
+                                   "dry_2_desert.tif"))
+dry_2_desert[dry_2_desert!=1 ] <- NA
+
+tmap_mode(mode = "view")
+
+tm_shape(dry_2_desert) +
+  tm_basemap("Esri.WorldImagery")+
+  tm_raster()
+
+```
+
