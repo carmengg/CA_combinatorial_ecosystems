@@ -11,6 +11,8 @@ library(here)
 library(tidyverse)
 library(tictoc)
 
+library(leaflet)
+
 
 # library with all the change comparison functions
 source(here("comparing_individual_layers","change_functions.R"))
@@ -30,7 +32,7 @@ biomass_regions <- function(lc_raster){
   
   thresh <- rbind(c(5,3), c(7,2), c(3,1), c(2,0))
   new_raster <- reclassify(lc_raster,thresh, right=FALSE)
-  new_raster[ !(new_raster %in% 0:3) == TRUE] <- NA 
+  new_raster[ !(new_raster %in% 0:4) == TRUE] <- NA 
 
   return(new_raster)
 }
@@ -39,8 +41,8 @@ biomass_regions <- function(lc_raster){
 ```{r}
 lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
 lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
-plot(lc_2008, xlab= "2008")
-plot(lc_2019, xlab="2019")
+#plot(lc_2008, xlab= "2008")
+#plot(lc_2019, xlab="2019")
 
 ```
 
@@ -49,9 +51,42 @@ biom8 <- biomass_regions(lc_2008)
 biom19 <- biomass_regions(lc_2019)
 plot(biom8, man= "2008")
 plot(biom19, main = "2019")
+```
 
-biom_cats <- c('developed','barren','grass','shrub','forset')
+```{r}
+biom_cats <- c('developed','barren','grass','shrub','forest')
 
+biom_chg_mtx <- change_mtx(biom8,biom19)
+colnames(biom_chg_mtx) <- biom_cats
+rownames(biom_chg_mtx) <- biom_cats
+biom_chg_mtx
+```
+```{r}
+tic('raster change')
+biom_change <- raster_change_mtx(biom8, 0:4, biom_cats,
+                  biom19, 0:4, biom_cats)
+toc()  # 58.87 sec elapsed
+
+plot(biom_change)
+```
+```{r}
+biom_diff <- biom8 - biom19
+plot(biom_diff)
+unique(biom_diff)
+```
+
+```{r}
+# https://rstudio.github.io/leaflet/raster.html
+pal <- colorNumeric('RdYlGn',
+  #c("#0C2C84", "#41B6C4", "#FFFFCC"), 
+                    -3:4,
+                    na.color = "transparent")
+
+leaflet() %>% 
+  addTiles() %>%
+  addRasterImage(biom_diff, colors = pal, opacity = 0.8) %>%
+  addLegend(pal = pal, values = values(biom_diff),
+    title = "Biomass change from 2008 to 2019")
 
 ```
 
