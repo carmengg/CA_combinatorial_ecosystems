@@ -1,0 +1,57 @@
+---
+title: "biomass_layer"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(here)
+library(tidyverse)
+library(tictoc)
+
+
+# library with all the change comparison functions
+source(here("comparing_individual_layers","change_functions.R"))
+```
+
+
+```{r}
+# reclassify from lc_raster with aggregated categories
+biomass_regions <- function(lc_raster){
+
+  # category (initial code)  -> biomass code
+  # forest (4) -> 4 (no reclassification)
+  # shrub  (5) -> 3 
+  # grass  (7) -> 2
+  # barren (3) -> 1
+  # developed (2) -> 0
+  
+  thresh <- rbind(c(5,3), c(7,2), c(3,1), c(2,0))
+  new_raster <- reclassify(lc_raster,thresh, right=FALSE)
+  new_raster[ !(new_raster %in% 0:3) == TRUE] <- NA 
+
+  return(new_raster)
+}
+```
+
+```{r}
+lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
+lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
+plot(lc_2008, xlab= "2008")
+plot(lc_2019, xlab="2019")
+
+```
+
+```{r}
+biom8 <- biomass_regions(lc_2008)
+biom19 <- biomass_regions(lc_2019)
+plot(biom8, man= "2008")
+plot(biom19, main = "2019")
+
+biom_cats <- c('developed','barren','grass','shrub','forset')
+
+
+```
+
