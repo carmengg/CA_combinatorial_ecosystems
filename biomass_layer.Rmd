@@ -71,6 +71,7 @@ plot(biom_change)
 ```
 ```{r}
 biom_diff <- biom8 - biom19
+biom_diff[biom_diff == 0] <- NA
 plot(biom_diff)
 unique(biom_diff)
 ```
