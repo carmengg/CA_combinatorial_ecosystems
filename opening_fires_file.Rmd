@@ -30,8 +30,24 @@ fires <- raw_fires %>% select(year,state, fire_name, Shape ) %>%
   select(!state) %>% 
   filter(year>2007)
 
+sb_shp <- st_read(here("shapefiles",
+                       "sb-county-boundary",
+                       "data",
+                       "commondata",
+                       "county_boundaries",
+                       "SB_only.shp"))
+
+
+# **** OPEN BIOMASS LAYER ****
+```
+
+
+```{r}
 match_fires <- st_transform(fires,crs(biom19))
-  
+sb_shp <- st_transform(sb_shp,crs(biom19))
+
+biom_df_19 <- raster::rasterToPoints(biom19) %>%
+  as.data.frame()
 ```
 
 
@@ -39,29 +55,72 @@ match_fires <- st_transform(fires,crs(biom19))
 # create map
 ggplot() +
   geom_raster(data = biom_df_19, aes(x = x, y = y, fill = sb_landcover_regions_match_2019))+
+  scale_fill_gradient(low = 'white', high = 'darkgreen')+
   geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(fill = "Biomass category")+
   theme_bw()
 ```
+
+
 ```{r}
-biom_df_19 <- raster::rasterToPoints(biom19) %>%
+# Biomass loss 8 to 19 (biggest three)
+
+forest_2_grass <- raster_change_ij(biom8, 4, biom19, 2)
+shrub_2_grass <- raster_change_ij(biom8, 3, biom19, 2)
+forest_2_shrub <- raster_change_ij(biom8, 4, biom19, 3)
+
+f2g_df <- raster::rasterToPoints(forest_2_grass) %>%
   as.data.frame()
-    
-# coord limits
-xlim <- c(-2218515,-2103375)
-ylim <- c(1411695,1614255) 
+s2g_df <- raster::rasterToPoints(shrub_2_grass) %>%
+  as.data.frame()
+f2s_df <- raster::rasterToPoints(forest_2_shrub) %>%
+  as.data.frame()
 
-ggplot()+
-  geom_raster(data = biom_df_19, aes(x = x, y = y, fill = sb_landcover_regions_match_2019))
-  #scale_fill_gradient(low = 'white', high = 'blue4')+
-  #geom_sf(data=ne_coastline(scale = 50, returnclass = 'sf'))+
-  #coord_sf(xlim=xlim, ylim=ylim)+
-
+rm(forest_2_grass,shrub_2_grass,forest_2_shrub)
 ```
 
+
+```{r}
+ggplot() +
+  geom_raster(data = f2g_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_sf(data=sb_shp, alpha=0, color="black")+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(title = "Forest 2 grass (2008 - 2019)")+
+  theme_bw()+
+  theme(legend.position = "none")
+  
+```
+```{r}
+ggplot() +
+  geom_raster(data = f2s_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_sf(data=sb_shp, alpha=0, color="black")+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(title = "Forest 2 shrub (2008 - 2019)")+
+  theme_bw()+
+  theme(legend.position = "none")
+  
+```
+```{r}
+ggplot() +
+  geom_raster(data = s2g_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_sf(data=sb_shp, alpha=0, color="black")+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(title = "Shrub 2 grass (2008 - 2019)")+
+  theme_bw()+
+  theme(legend.position = "none")
+```
 ```{r}
 
-ogr_fires <- readOGR(path) %>% 
-  clean_names()
+f2s_df$layer=2
+s2g_df$layer=3
 
+ggplot() +
+  geom_raster(data = f2g_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_raster(data = f2s_df, aes(x = x, y = y, fill = layer), color="green")+
+  geom_raster(data = s2g_df, aes(x = x, y = y, fill = layer), color="yellow")+
+  geom_sf(data=sb_shp, alpha=0, color="black")+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(title = "Shrub 2 grass (2008 - 2019)")+
+  theme_bw()
 ```
 
