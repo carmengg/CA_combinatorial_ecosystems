@@ -1,0 +1,67 @@
+---
+title: "Santa Barbara fires"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sf)
+library(rgdal)
+library(here)
+library(tidyverse)
+library(janitor)
+```
+
+```{r}
+path <- here(
+  "comparing_individual_layers",
+  "biomass",
+  "Fire Perimeters, Santa Barbara County, 2018",
+  "data",
+  "v10",
+  "environment.gdb")
+
+raw_fires <- sf::st_read(dsn= path) %>% 
+  clean_names
+
+fires <- raw_fires %>% select(year,state, fire_name, Shape ) %>% 
+  filter(state == "CA") %>% 
+  select(!state) %>% 
+  filter(year>2007)
+
+match_fires <- st_transform(fires,crs(biom19))
+  
+```
+
+
+```{r}
+# create map
+ggplot() +
+  geom_raster(data = biom_df_19, aes(x = x, y = y, fill = sb_landcover_regions_match_2019))+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  theme_bw()
+```
+```{r}
+biom_df_19 <- raster::rasterToPoints(biom19) %>%
+  as.data.frame()
+    
+# coord limits
+xlim <- c(-2218515,-2103375)
+ylim <- c(1411695,1614255) 
+
+ggplot()+
+  geom_raster(data = biom_df_19, aes(x = x, y = y, fill = sb_landcover_regions_match_2019))
+  #scale_fill_gradient(low = 'white', high = 'blue4')+
+  #geom_sf(data=ne_coastline(scale = 50, returnclass = 'sf'))+
+  #coord_sf(xlim=xlim, ylim=ylim)+
+
+```
+
+```{r}
+
+ogr_fires <- readOGR(path) %>% 
+  clean_names()
+
+```
+
