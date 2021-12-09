@@ -15,4 +15,5 @@ comparing_individual_layers/aridity/ca_aridity_comparisons/
 comparing_individual_layers/climate
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
-python_scripts/subtropical_2_tropical.tif
+python_scripts/*.tif
+comparing_individual_layers/biomass/Fire Perimeters, Santa Barbara County, 2018
