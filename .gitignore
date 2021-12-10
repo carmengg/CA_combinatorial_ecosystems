@@ -13,7 +13,8 @@ combine_layers/elu_*.tif
 combine_layers/elu_SB
 comparing_individual_layers/aridity/ca_aridity_comparisons/
 comparing_individual_layers/climate
+comparing_individual_layers/biomass/*.tif
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 python_scripts/*.tif
-comparing_individual_layers/biomass/Fire Perimeters, Santa Barbara County, 2018
+comparing_individual_layers/biomass/Fire Perimeters, Santa Barbara County, 2018 Update
