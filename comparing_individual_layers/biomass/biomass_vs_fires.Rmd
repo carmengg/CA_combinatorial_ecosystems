@@ -111,16 +111,48 @@ ggplot() +
 ```
 ```{r}
 
-f2s_df$layer=2
-s2g_df$layer=3
+neg_biomass <- biom19 - biom8
+neg_biomass[neg_biomass>-1] <- NA
+
+neg_df <- raster::rasterToPoints(neg_biomass) %>%
+  as.data.frame()
 
 ggplot() +
-  geom_raster(data = f2g_df, aes(x = x, y = y, fill = layer), color="blue")+
-  geom_raster(data = f2s_df, aes(x = x, y = y, fill = layer), color="green")+
-  geom_raster(data = s2g_df, aes(x = x, y = y, fill = layer), color="yellow")+
+  geom_raster(data = neg_df, aes(x = x, y = y, fill = layer), color="blue")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
   geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
-  labs(title = "Shrub 2 grass (2008 - 2019)")+
-  theme_bw()
+  labs(title = "Decrease in biomass (2008 - 2019)")+
+  theme_bw()+
+  theme(legend.position = "none")
+```
+```{r}
+same_biomass <- biom19 - biom8
+same_biomass[same_biomass != 0] <- NA
+
+same_df <- raster::rasterToPoints(same_biomass) %>%
+  as.data.frame()
+
+ggplot() +
+  geom_raster(data = same_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_sf(data=sb_shp, alpha=0, color="black")+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(title = "Stable biomass (2008 - 2019)")+
+  theme_bw()+
+  theme(legend.position = "none")
 ```
 
+```{r}
+increase_biomass <- biom19 - biom8
+increase_biomass[increase_biomass < 1] <- NA
+
+plus_df <- raster::rasterToPoints(increase_biomass) %>%
+  as.data.frame()
+
+ggplot() +
+  geom_raster(data = plus_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_sf(data=sb_shp, alpha=0, color="black")+
+  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  labs(title = "Increase in biomass (2008 - 2019)")+
+  theme_bw()+
+  theme(legend.position = "none")
+```
