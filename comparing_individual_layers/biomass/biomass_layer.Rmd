@@ -1,0 +1,112 @@
+---
+title: "biomass_layer"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(raster)
+library(here)
+library(tidyverse)
+library(tictoc)
+
+library(leaflet)
+
+
+# library with all the change comparison functions
+source(here("comparing_individual_layers","change_functions.R"))
+
+source(here("layer_processing.R"))
+```
+
+```{r}
+root <- here("combine_layers",
+             "sb_matched_layers_timeseries",
+             "landcover",
+             "sb_landcover_regions_match_")
+lc_2001 <- raster(paste(root,"2001.tif",sep=""))
+lc_2008 <- raster(paste(root,"2008.tif",sep=""))
+lc_2019 <- raster(paste(root,"2019.tif",sep=""))
+plot(lc_2001, main= "2001")
+plot(lc_2008, main= "2008")
+plot(lc_2019, main="2019")
+
+```
+
+```{r}
+biom1 <- biomass_regions(lc_2001)
+biom8 <- biomass_regions(lc_2008)
+biom19 <- biomass_regions(lc_2019)
+
+writeRaster(biom1, here("comparing_individual_layers",
+                  "biomass",
+                  "biomass_2001.tif"))
+
+writeRaster(biom8, here("comparing_individual_layers",
+                  "biomass",
+                  "biomass_2008.tif"))
+
+writeRaster(biom19, here("comparing_individual_layers",
+                  "biomass",
+                  "biomass_2019.tif"))
+
+rm(lc_2001,lc_2008,lc_2019)
+plot(biom1, main= "2001")
+plot(biom8, main= "2008")
+plot(biom19, main = "2019")
+```
+
+```{r}
+biom_chg_mtx_1_to_8 <- change_mtx(biom1,biom8)
+colnames(biom_chg_mtx_1_to_8) <- biom_cats
+rownames(biom_chg_mtx_1_to_8) <- biom_cats
+biom_chg_mtx_1_to_8
+```
+```{r}
+change_df(biom_chg_mtx_1_to_8)
+```
+
+```{r}
+biom_cats <- c('developed','barren','grass','shrub','forest')
+
+biom_chg_mtx_8_to_19 <- change_mtx(biom8,biom19)
+colnames(biom_chg_mtx_8_to_19) <- biom_cats
+rownames(biom_chg_mtx_8_to_19) <- biom_cats
+biom_chg_mtx_8_to_19
+```
+```{r}
+change_df(biom_chg_mtx_8_to_19)
+```
+
+```{r}
+# tic('raster change')
+# biom_change <- raster_change_mtx(biom8, 0:4, biom_cats,
+#                   biom19, 0:4, biom_cats)
+# toc()  # 58.87 sec elapsed
+# 
+# plot(biom_change)
+```
+
+
+```{r}
+# biom_diff <- biom19 - biom8
+# biom_diff[biom_diff == 0] <-NA
+# plot(biom_diff)
+# unique(biom_diff)
+
+# https://rstudio.github.io/leaflet/raster.html
+# pal <- colorNumeric('RdYlGn',
+#   #c("#0C2C84", "#41B6C4", "#FFFFCC"), 
+#                     -3:4,
+#                     na.color = "transparent")
+# 
+# leaflet() %>% 
+#   #addTiles() %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>% 
+#   addRasterImage(biom_diff, colors = pal, opacity = 0.8) %>%
+#   addLegend(pal = pal, values = values(biom_diff),
+#     title = "Biomass change from 2008 to 2019")
+
+```
+

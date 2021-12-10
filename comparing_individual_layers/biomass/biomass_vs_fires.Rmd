@@ -45,12 +45,10 @@ path <- here(
 raw_fires <- st_read(dsn= path,as_tibble=FALSE) %>% 
   clean_names
 
-k = 2006
 fires <- raw_fires %>% 
   select(year,state, fire_name, Shape ) %>% 
   filter(state == "CA") %>% 
-  select(!state) %>% 
-  filter(year>=k)
+  select(!state)
 
 fires <- st_transform(fires,crs(biom19))
 rm(raw_fires)
@@ -73,22 +71,60 @@ rm(path)
 
 
 ```{r}
+# -------------------------------------------------------------
 
+# returns data frame
 bio_change <- function(rast1, rast2, change){
+  change_rast <- rast2 - rast1
+  if(change == 1){
+    change_rast[change_rast < 1] <- NA}
+  if(change == 0 ){
+    change_rast[change_rast != 0] <- NA}
+  if(change == -1){
+    change_rast[change_rast>-1] <- NA}
+
+  df <- raster::rasterToPoints(change_rast) %>% as.data.frame()
+  return(df)
+}
+# -------------------------------------------------------------
+
+# select fires that happened on from <= year < to
+fire_subset <- function(fires,from,to){
   
+  subset <- fires %>% 
+    filter(from <= year, year <= to)
+  return(fires)
 }
 
-plot_bio_chng_fires <- function(change, fire_yr1, fire_yr2){
-  if(change == "plus"){
-  title <- paste("Increase in biomass (",) 
-  }
+plot_bio_chng_fires <- function(change, 
+                                change_df, yr1, yr2, 
+                                fires,
+                                sb_shp){
+  if(change == 1){
+    title <- paste("Increase in biomass (",yr1," - ", yr2,")", sep = "") }
+  if(change == 0){
+    title <- paste("Stable biomass (",yr1," - ", yr2,")", sep = "") }
+  if(change == -1){
+    title <- paste("Decrease in biomass (",yr1," - ", yr2,")", sep = "") }
+  
   graph <- ggplot() +
-    geom_raster(data = plus_df, aes(x = x, y = y), fill="gray50")+
+    geom_raster(data = change_df, aes(x = x, y = y), fill="gray50")+
     geom_sf(data=sb_shp, alpha=0, color="black")+
     geom_sf(data = fires, alpha=0.2, aes(color = year, fill=year), size = 0.3) +
-    labs(title = "Increase in biomass (2008 - 2019)")+
+    labs(title = title)+
     theme_bw()
+  
+  return(graph)
 }
+```
+
+
+```{r}
+plot_bio_chng_fires(0, 
+                    bio_change(biom8,biom19,0), 
+                    2008, 2019,
+                    fire_subset(fires,2006,2018),
+                    sb_shp )
 ```
 
 
