@@ -57,6 +57,7 @@ replace_outliers <- function(aridity,low_end, high_end){
 
 ```{r}
 ee_2001 <- raster(here('ee_aridity','ee_ai_2001.tif'))
+# recover these files ---- they're in my laptop
 r_2001 <- replace_outliers(ee_2001,0,10)
 
 plot(ee_2001)
