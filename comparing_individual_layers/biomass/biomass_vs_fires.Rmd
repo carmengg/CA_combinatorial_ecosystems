@@ -6,30 +6,57 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library(raster)  # add packages in this order
 library(sf)
 library(rgdal)
+
 library(here)
 library(tidyverse)
 library(janitor)
+
+
+# library with all the change comparison functions
+source(here("comparing_individual_layers","change_functions.R"))
 ```
 
 ```{r}
+
+# -------------------------------------------------------------
+# open biomass layers
 path <- here(
   "comparing_individual_layers",
   "biomass",
-  "Fire Perimeters, Santa Barbara County, 2018",
+  "biomass")
+
+biom1<- raster(paste(path,"_2001.tif", sep=""))
+biom8<- raster(paste(path,"_2008.tif", sep=""))
+biom19<- raster(paste(path,"_2019.tif", sep=""))
+
+# -------------------------------------------------------------
+# read in fire perimeters geometries
+path <- here(
+  "comparing_individual_layers",
+  "biomass",
+  "Fire Perimeters, Santa Barbara County, 2018 Update",
   "data",
   "v10",
   "environment.gdb")
 
-raw_fires <- sf::st_read(dsn= path) %>% 
+raw_fires <- st_read(dsn= path,as_tibble=FALSE) %>% 
   clean_names
 
-fires <- raw_fires %>% select(year,state, fire_name, Shape ) %>% 
+k = 2006
+fires <- raw_fires %>% 
+  select(year,state, fire_name, Shape ) %>% 
   filter(state == "CA") %>% 
   select(!state) %>% 
-  filter(year>2007)
+  filter(year>=k)
 
+fires <- st_transform(fires,crs(biom19))
+rm(raw_fires)
+
+# -------------------------------------------------------------
+# open SB shapefile
 sb_shp <- st_read(here("shapefiles",
                        "sb-county-boundary",
                        "data",
@@ -37,38 +64,68 @@ sb_shp <- st_read(here("shapefiles",
                        "county_boundaries",
                        "SB_only.shp"))
 
-
-# **** OPEN BIOMASS LAYER ****
-```
-
-
-```{r}
-match_fires <- st_transform(fires,crs(biom19))
 sb_shp <- st_transform(sb_shp,crs(biom19))
+# -------------------------------------------------------------
 
-biom_df_19 <- raster::rasterToPoints(biom19) %>%
-  as.data.frame()
+rm(path)
+
 ```
 
 
 ```{r}
-# create map
+
+bio_change <- function(rast1, rast2, change){
+  
+}
+
+plot_bio_chng_fires <- function(change, fire_yr1, fire_yr2){
+  if(change == "plus"){
+  title <- paste("Increase in biomass (",) 
+  }
+  graph <- ggplot() +
+    geom_raster(data = plus_df, aes(x = x, y = y), fill="gray50")+
+    geom_sf(data=sb_shp, alpha=0, color="black")+
+    geom_sf(data = fires, alpha=0.2, aes(color = year, fill=year), size = 0.3) +
+    labs(title = "Increase in biomass (2008 - 2019)")+
+    theme_bw()
+}
+```
+
+
+```{r}
+
 ggplot() +
-  geom_raster(data = biom_df_19, aes(x = x, y = y, fill = sb_landcover_regions_match_2019))+
-  scale_fill_gradient(low = 'white', high = 'darkgreen')+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
-  labs(fill = "Biomass category")+
+  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
+  geom_sf(data=sb_shp, alpha=0, color="black")+
   theme_bw()
 ```
 
+```{r}
+# ------ 2019 Biomass + Fire Perimeters maps ------
+
+# transform raster to data frame
+# biom_df_19 <- raster::rasterToPoints(biom19) %>%
+#   as.data.frame()
+# 
+# 
+# ggplot() +
+#   geom_raster(data = biom_df_19, aes(x = x, y = y, fill = biomass_2019))+
+#   scale_fill_gradient(low = 'white', high = 'darkgreen')+
+#   geom_sf(data = fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+#   labs(fill = "Biomass category")+
+#   theme_bw()
+```
+
 
 ```{r}
-# Biomass loss 8 to 19 (biggest three)
+# -------------------------------------------------------------
+# Biomass loss 2008 to 2019 (largest three)
 
 forest_2_grass <- raster_change_ij(biom8, 4, biom19, 2)
 shrub_2_grass <- raster_change_ij(biom8, 3, biom19, 2)
 forest_2_shrub <- raster_change_ij(biom8, 4, biom19, 3)
 
+# raster to data frame
 f2g_df <- raster::rasterToPoints(forest_2_grass) %>%
   as.data.frame()
 s2g_df <- raster::rasterToPoints(shrub_2_grass) %>%
@@ -81,36 +138,45 @@ rm(forest_2_grass,shrub_2_grass,forest_2_shrub)
 
 
 ```{r}
+# -------------------------------------------------------------
 ggplot() +
   geom_raster(data = f2g_df, aes(x = x, y = y, fill = layer), color="blue")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
   labs(title = "Forest 2 grass (2008 - 2019)")+
   theme_bw()+
   theme(legend.position = "none")
   
 ```
+
+
 ```{r}
+# -------------------------------------------------------------
 ggplot() +
   geom_raster(data = f2s_df, aes(x = x, y = y, fill = layer), color="blue")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
   labs(title = "Forest 2 shrub (2008 - 2019)")+
   theme_bw()+
   theme(legend.position = "none")
   
 ```
+
+
 ```{r}
+# -------------------------------------------------------------
 ggplot() +
   geom_raster(data = s2g_df, aes(x = x, y = y, fill = layer), color="blue")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
   labs(title = "Shrub 2 grass (2008 - 2019)")+
   theme_bw()+
   theme(legend.position = "none")
 ```
-```{r}
 
+
+```{r}
+# -------------------------------------------------------------
 neg_biomass <- biom19 - biom8
 neg_biomass[neg_biomass>-1] <- NA
 
@@ -118,14 +184,19 @@ neg_df <- raster::rasterToPoints(neg_biomass) %>%
   as.data.frame()
 
 ggplot() +
-  geom_raster(data = neg_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_raster(data = neg_df, aes(x = x, y = y), colour="grey50")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
   labs(title = "Decrease in biomass (2008 - 2019)")+
-  theme_bw()+
-  theme(legend.position = "none")
+  theme_bw()
+  #theme(legend.position = "none")
+
+rm(neg_biomass,neg_df)
 ```
+
+
 ```{r}
+# -------------------------------------------------------------
 same_biomass <- biom19 - biom8
 same_biomass[same_biomass != 0] <- NA
 
@@ -133,15 +204,17 @@ same_df <- raster::rasterToPoints(same_biomass) %>%
   as.data.frame()
 
 ggplot() +
-  geom_raster(data = same_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_raster(data = same_df, aes(x = x, y = y), fill="gray50")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
   labs(title = "Stable biomass (2008 - 2019)")+
-  theme_bw()+
-  theme(legend.position = "none")
+  theme_bw()
+
+rm(same_biomass,same_df)
 ```
 
 ```{r}
+# -------------------------------------------------------------
 increase_biomass <- biom19 - biom8
 increase_biomass[increase_biomass < 1] <- NA
 
@@ -149,10 +222,9 @@ plus_df <- raster::rasterToPoints(increase_biomass) %>%
   as.data.frame()
 
 ggplot() +
-  geom_raster(data = plus_df, aes(x = x, y = y, fill = layer), color="blue")+
+  geom_raster(data = plus_df, aes(x = x, y = y), fill="gray50")+
   geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = match_fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
+  geom_sf(data = fires, alpha=0.2, aes(color = year, fill=year), size = 0.3) +
   labs(title = "Increase in biomass (2008 - 2019)")+
-  theme_bw()+
-  theme(legend.position = "none")
+  theme_bw()
 ```
