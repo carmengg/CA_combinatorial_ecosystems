@@ -90,10 +90,9 @@ bio_change <- function(rast1, rast2, change){
 
 # select fires that happened on from <= year < to
 fire_subset <- function(fires,from,to){
-  
   subset <- fires %>% 
     filter(from <= year, year <= to)
-  return(fires)
+  return(subset)
 }
 
 plot_bio_chng_fires <- function(change, 
@@ -119,14 +118,6 @@ plot_bio_chng_fires <- function(change,
 ```
 
 
-```{r}
-plot_bio_chng_fires(0, 
-                    bio_change(biom8,biom19,0), 
-                    2008, 2019,
-                    fire_subset(fires,2006,2018),
-                    sb_shp )
-```
-
 
 ```{r}
 
@@ -137,24 +128,10 @@ ggplot() +
 ```
 
 ```{r}
-# ------ 2019 Biomass + Fire Perimeters maps ------
+# *************************************************************
+## Looking at specific change in biomass 
+# *************************************************************
 
-# transform raster to data frame
-# biom_df_19 <- raster::rasterToPoints(biom19) %>%
-#   as.data.frame()
-# 
-# 
-# ggplot() +
-#   geom_raster(data = biom_df_19, aes(x = x, y = y, fill = biomass_2019))+
-#   scale_fill_gradient(low = 'white', high = 'darkgreen')+
-#   geom_sf(data = fires,fill="purple", alpha=0.3, color = "red", size = 0.3) +
-#   labs(fill = "Biomass category")+
-#   theme_bw()
-```
-
-
-```{r}
-# -------------------------------------------------------------
 # Biomass loss 2008 to 2019 (largest three)
 
 forest_2_grass <- raster_change_ij(biom8, 4, biom19, 2)
@@ -212,55 +189,54 @@ ggplot() +
 
 
 ```{r}
-# -------------------------------------------------------------
-neg_biomass <- biom19 - biom8
-neg_biomass[neg_biomass>-1] <- NA
+# *************************************************************
+##       Decrease in biomass 
+# *************************************************************
+plot_bio_chng_fires(-1, 
+                    bio_change(biom1,biom8,-1), 
+                    2001, 2008,
+                    fire_subset(fires,1999,2008),
+                    sb_shp )
 
-neg_df <- raster::rasterToPoints(neg_biomass) %>%
-  as.data.frame()
-
-ggplot() +
-  geom_raster(data = neg_df, aes(x = x, y = y), colour="grey50")+
-  geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
-  labs(title = "Decrease in biomass (2008 - 2019)")+
-  theme_bw()
-  #theme(legend.position = "none")
-
-rm(neg_biomass,neg_df)
+plot_bio_chng_fires(-1, 
+                    bio_change(biom8,biom19,-1), 
+                    2008, 2019,
+                    fire_subset(fires,2006,2019),
+                    sb_shp )
 ```
 
 
 ```{r}
-# -------------------------------------------------------------
-same_biomass <- biom19 - biom8
-same_biomass[same_biomass != 0] <- NA
+# *************************************************************
+##       Stable biomass 
+# *************************************************************
+plot_bio_chng_fires(0, 
+                    bio_change(biom1,biom8,0), 
+                    2001, 2008,
+                    fire_subset(fires,1999,2008),
+                    sb_shp )
 
-same_df <- raster::rasterToPoints(same_biomass) %>%
-  as.data.frame()
-
-ggplot() +
-  geom_raster(data = same_df, aes(x = x, y = y), fill="gray50")+
-  geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = fires, alpha=0.3, aes(color = year, fill=year), size = 0.3) +
-  labs(title = "Stable biomass (2008 - 2019)")+
-  theme_bw()
-
-rm(same_biomass,same_df)
+plot_bio_chng_fires(0, 
+                    bio_change(biom8,biom19,0), 
+                    2008, 2019,
+                    fire_subset(fires,2006,2019),
+                    sb_shp )
 ```
 
 ```{r}
-# -------------------------------------------------------------
-increase_biomass <- biom19 - biom8
-increase_biomass[increase_biomass < 1] <- NA
+# *************************************************************
+##       Increase in biomass 
+# *************************************************************
 
-plus_df <- raster::rasterToPoints(increase_biomass) %>%
-  as.data.frame()
+plot_bio_chng_fires(1, 
+                    bio_change(biom1,biom8,1), 
+                    2001, 2008,
+                    fire_subset(fires,1999,2008),
+                    sb_shp )
 
-ggplot() +
-  geom_raster(data = plus_df, aes(x = x, y = y), fill="gray50")+
-  geom_sf(data=sb_shp, alpha=0, color="black")+
-  geom_sf(data = fires, alpha=0.2, aes(color = year, fill=year), size = 0.3) +
-  labs(title = "Increase in biomass (2008 - 2019)")+
-  theme_bw()
+plot_bio_chng_fires(1, 
+                    bio_change(biom8,biom19,1), 
+                    2008, 2019,
+                    fire_subset(fires,2006,2018),
+                    sb_shp )
 ```
