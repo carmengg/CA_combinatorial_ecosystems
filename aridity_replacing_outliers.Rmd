@@ -15,41 +15,53 @@ library(here)
 
 
 ```{r}
-# returns a raster with same extent as aridity,
-# with all values outside (0,10) converted to out_value
+# returns a raster with same extent as rast,
+# with all values outside (low_end, high_end) converted to some out_value
 # and all other values to NA
-outliers <- function(aridity, low_end, high_end){
-  out_value = as.integer(summary(aridity)[5]*10)  # value outside raster range
-  bad_data <- aridity
+outliers_rast <- function(rast, low_end, high_end){
   
+  out_value = as.integer(summary(rast)[5]*10)  
+  # create value outside raster range
+  # summary(rast)[5] is the max value on the raster
+  
+  bad_data <- rast
   bad_data[bad_data<low_end] <- out_value
   bad_data[bad_data>high_end] <- out_value  
   bad_data[bad_data!= out_value] <- NA
   
-  bad_indices <- which(bad_data[] == out_value )
-  
-  return(bad_indices)
+  return(bad_data)
 }
 # ----------------------------------------------------
 
-# returns a copy of the aridity raster 
-# with the outliers replaced by NA
-replace_outliers <- function(aridity,low_end, high_end){
+# returns a list of indices of the pixels in rast 
+# with values outside (low_end, high_end) 
+outliers <- function(rast, low_end, high_end){
   
-  bad_indices <- outliers(aridity,low_end, high_end)
+  bad_indices <- which((rast[] > high_end) | (rast[] < low_end))
+  
+  return(bad_indices)
+}
+
+# ----------------------------------------------------
+
+# returns a copy of the rast raster 
+# with the outliers replaced by the average of buffer=100000 cells around
+replace_outliers <- function(rast,low_end, high_end){
+  
+  bad_indices <- outliers(rast,low_end, high_end)
   
   # remove outliers
-  new_aridity <- aridity
-  new_aridity[new_aridity<low_end] <- NA
-  new_aridity[new_aridity>high_end] <- NA
+  new_rast <- rast
+  new_rast[new_rast<low_end] <- NA
+  new_rast[new_rast>high_end] <- NA
   
-  result<- extract(new_aridity, 
-                 xyFromCell(new_aridity, bad_indices), 
+  result<- extract(new_rast, 
+                 xyFromCell(new_rast, bad_indices), 
                  buffer=100000, 
                  fun=mean,
                  na.rm=TRUE)
-  new_aridity[bad_indices] <-result
-  return(new_aridity)
+  new_rast[bad_indices] <- result
+  return(new_rast)
 }
 
 ```
@@ -62,7 +74,7 @@ r_2001 <- replace_outliers(ee_2001,0,10)
 
 plot(ee_2001)
 #plot(aridity_0to10)
-plot(r_2001)
+plot(r_2001, main="Aridity Index (2010) ")
 ```
 
 ```{r}
@@ -102,8 +114,8 @@ aridity_regions <- function(arid_raster){
 
 ```{r}
 arid_regions_2001 <- aridity_regions(r_2001)
-plot(r_2001)
-plot(arid_regions_2001)
+plot(r_2001, main= "Aridiy Index (2010)")
+plot(arid_regions_2001, main = "Aridity Regions (2010)")
 ```
 
 ```{r}
