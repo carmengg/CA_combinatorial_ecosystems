@@ -135,7 +135,7 @@ ca_arid19 <- raster(here("combine_layers",
 tic('ca change_mtx time')
 ca_mtx_arid_8_19 <-change_mtx(ca_arid8, ca_arid19)
 toc()
-# ca change_mtx time: 2840.274 sec elapsed
+# ca change_mtx time: 2840.274 sec elapsed (~47 mins)
 ```
 
 
