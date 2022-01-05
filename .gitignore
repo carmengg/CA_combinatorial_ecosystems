@@ -18,3 +18,4 @@ comparing_individual_layers/biomass/*.tif
 */.ipynb_checkpoints/*
 python_scripts/*.tif
 comparing_individual_layers/biomass/Fire Perimeters, Santa Barbara County, 2018 Update
+finding_change_areas.qgz
