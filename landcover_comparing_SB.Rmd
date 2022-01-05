@@ -15,81 +15,11 @@ library(sf)
 library(tictoc)
 ```
 
-## CREATE CHANGE MATRIX
 
 ```{r}
-
-# see how category i in A changes in B  (A and B have categories {1,...,k})
-
-change_i <- function(rasterA,i,rasterB,k){
-  change <- rasterA
-  change[change!=i] <- NA     # select category A_i
-  change <- change - rasterB  # change between A_i and B (change can equal 0)
-  # if categories for rasters = {1,...,k}, then change categories = {i-1,...,1-k} 
-  # ex: a pixel in change with value i-1 means A changed from category i to category 1
-  
-  df1 <- data.frame(freq(change)) %>% #count number of pixels in each change category
-    filter(is.na(value)==FALSE)
-  
-  # -- extend dataframe to include categories A_i did not change to --
-  value <- setdiff( seq(i-1,i-k,by=-1) ,df1[,1]) # A_i did not change to any of these categories
-  count <- rep(0,each=length(value))
-  df2 <- data.frame(value,count)
-
-  all_change <- bind_rows(df1,df2) %>% 
-    arrange(desc(value))  # recover categories in raster from order
-  return(all_change[,2])
-}
-
-# ------------------------------------------------------------------------------------
-# Returns kxk matrix M = (M_ij)
-# M_ij = # pixels changed from category i in rasterA to category j in rasterB
-# cats = labels for categories
-
-change_mtx <- function(rasterA,rasterB,k, cats=NULL){
-  mtx <- matrix(NA, k, k)  ## set up an empty matrix to fill
-  for (i in 1:k) {
-    ## fill i-th row of the matrix
-    mtx[i,] <- change_i(rasterA,i,rasterB,k)
-  } 
-  if(is.null(cats) == FALSE){
-    rownames(mtx)<-cats
-    colnames(mtx)<-cats
-  }
-  return(mtx)
-}
+# library with all the change comparison functions
+source(here("comparing_individual_layers","change_functions.R"))
 ```
-
-## TURN CHANGE MATRIX INTO DATAFRAME
-
-```{r}
-
-change_df <- function(change_mtx, keep_equals=FALSE){
-  change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
-  m <- nrow(change_mtx)
-  n <- ncol(change_mtx)
-  for(i in 1:m){
-    from_name <- rownames(change_mtx)[i]
-    for(j in 1:n){
-      if(i==j){
-        if(keep_equals==TRUE){
-          to_name <- colnames(change_mtx)[j]
-          change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change_mtx[i,j])    
-        } 
-      }
-      else{
-        to_name <- colnames(change_mtx)[j]
-        change_tofrom[nrow(change_tofrom)+1,] <- list(from_name,to_name,change_mtx[i,j])    
-        }
-    }
-  }
-  # *** would be good to remove entries with NULL in to or from ***
-  return(change_tofrom)
-}
-```
-
-
-## EXAMPLES
 
 
 ```{r}
@@ -97,8 +27,8 @@ change_df <- function(change_mtx, keep_equals=FALSE){
 
 lc_2008 <- raster(here("sb_layers","sb_landcover_2008.tif"))
 lc_2019 <- raster(here("sb_layers","sb_landcover_2019.tif"))
-plot(lc_2008, xlab= "2008")
-plot(lc_2019, xlab="2019")
+plot(lc_2008, main= "Santa Barbara land cover (2008)")
+plot(lc_2019, main="Santa Barbara land cover (2019)")
 ```
 
 ```{r}
@@ -106,7 +36,7 @@ plot(lc_2019, xlab="2019")
 
 change <- (lc_2008 - lc_2019)
 change[change==0] <- NA
-plot(change, xlab="areas which changed land cover 2008 to 2019")
+plot(change, main="areas which changed land cover from 2008 to 2019")
 rm(change)
 ```
 
@@ -123,12 +53,19 @@ rm(change)
 # 9 : wetland           (90,95)
 # 10 : open water         (11)
 # numbers in parenthesis are the codes in original land cover map which have been aggregated under same category
-cats <- c("ice/snow","developed","barren","forest","shrub","NULL","grass","crop","wetland","water")
+#all_cats <- c("ice/snow","developed","barren","forest","shrub","grass","crop","wetland","water")
 
 tic("computing change mtx")
-change819 <- change_mtx(lc_2008,lc_2019,10,cats)
+change819 <- change_mtx(lc_2008,lc_2019)
 toc()
 # ~1 min
+
+cats <- c("developed","barren","forest","shrub","grass","crop","wetland","water")
+
+rownames(change819)<-cats
+colnames(change819)<-cats
+
+print("Santa Barbara land cover change, 2008 to 2019")
 change819
 ```
 
@@ -140,10 +77,7 @@ ex of how to read table: entry at row=forest and col=shrub are the #pixels chang
 ```{r}
 
 change_tofrom <- change_df(change_mtx = change819, keep_equals = FALSE)
-change_tofrom %>% arrange(desc(num_pixels))
+change_tofrom
+```
 
-```
-```{r}
-change_mtx(lc_2008,lc_2019,10)
-```
 

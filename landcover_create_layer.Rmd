@@ -86,4 +86,3 @@ writeRaster(ca_lc_regions,filename=here("ca_subsets","landcover","ca_landcover_r
 ```
 
 
-
