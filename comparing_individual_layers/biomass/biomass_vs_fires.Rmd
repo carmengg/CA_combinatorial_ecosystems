@@ -254,9 +254,9 @@ plot_bio_chng_fires(-1,
                     fire_subset(fires,1999,2018),
                     sb_shp )
 
-plot_bio_chng_fires(1, 
-                    bio_change(biom1,biom19,1), 
-                    2001, 2019,
+plot_bio_chng_fires(-1, 
+                    bio_change(biom8,biom19,-1), 
+                    2008, 2019,
                     fire_subset(fires,1999,2018),
                     sb_shp )
 ```

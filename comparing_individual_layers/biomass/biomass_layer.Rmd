@@ -20,6 +20,48 @@ source(here("comparing_individual_layers","change_functions.R"))
 source(here("layer_processing.R"))
 ```
 
+
+```{r}
+root <- here("combine_layers",
+             "ca_matched_layers_timeseries",
+             "landcover",
+             "ca_landcover_regions_match_")
+lc_2008 <- raster(paste(root,"2008.tif",sep=""))
+lc_2019 <- raster(paste(root,"2019.tif",sep=""))
+
+#plot(lc_2008, main= "2008")
+#plot(lc_2019, main="2019")
+
+biom8 <- biomass_regions(lc_2008)
+biom19 <- biomass_regions(lc_2019)
+
+writeRaster(biom19, here("comparing_individual_layers",
+                  "biomass",
+                  "ca_biomass_20019.tif"))
+
+writeRaster(biom8, here("comparing_individual_layers",
+                  "biomass",
+                  "ca_biomass_2008.tif"))
+```
+
+
+```{r}
+wo_urban_19<- biom19
+wo_urban_19[wo_urban_19 == 0] <- NA
+
+wo_urban_8<- biom8
+wo_urban_8[wo_urban_8 == 0] <- NA
+
+writeRaster(wo_urban_8, here("comparing_individual_layers",
+                  "biomass",
+                  "wo_urban_8.tif"))
+
+writeRaster(wo_urban_19, here("comparing_individual_layers",
+                  "biomass",
+                  "wo_urban_19.tif"))
+```
+
+
 ```{r}
 root <- here("combine_layers",
              "sb_matched_layers_timeseries",
@@ -31,6 +73,8 @@ lc_2019 <- raster(paste(root,"2019.tif",sep=""))
 plot(lc_2001, main= "2001")
 plot(lc_2008, main= "2008")
 plot(lc_2019, main="2019")
+
+
 
 ```
 
@@ -63,6 +107,8 @@ colnames(biom_chg_mtx_1_to_8) <- biom_cats
 rownames(biom_chg_mtx_1_to_8) <- biom_cats
 biom_chg_mtx_1_to_8
 ```
+
+
 ```{r}
 change_df(biom_chg_mtx_1_to_8)
 ```
@@ -75,6 +121,8 @@ colnames(biom_chg_mtx_8_to_19) <- biom_cats
 rownames(biom_chg_mtx_8_to_19) <- biom_cats
 biom_chg_mtx_8_to_19
 ```
+
+
 ```{r}
 change_df(biom_chg_mtx_8_to_19)
 ```
