@@ -1,8 +1,10 @@
 #########################################################
 #   FUNCTIONS TO PROCESS ECOLOGICAL LAND UNITS LAYERS
 # - land cover
-# - temperature
+# - biomass
 # - aridity index
+# - temperature
+
 #########################################################
 
 
@@ -17,7 +19,7 @@
 #                 RASTER PREPARATION
 #########################################################
 
-# shape needs to be opened via readOGR() in library(rgdal) 
+# shape passed as parameter needs to be opened via readOGR() in library(rgdal) 
 crop_shape <- function(ref_raster , shape){
   new_shape <- spTransform(shape, crs(ref_raster))
   return(mask(crop(x= ref_raster, y=st_bbox(new_shape)),new_shape))
@@ -79,4 +81,6 @@ biomass_regions <- function(lc_raster){
   return(new_raster)
 }
 
-
+#########################################################
+#                     ARIDITY INDEX
+#########################################################

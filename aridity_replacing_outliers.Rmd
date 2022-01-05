@@ -16,10 +16,10 @@ library(here)
 
 ```{r}
 # returns a raster with same extent as aridity,
-# with all values outside (0,10) converted to out_value
+# with all values outside (low_end,high_end) converted to out_value
 # and all other values to NA
 outliers <- function(aridity, low_end, high_end){
-  out_value = as.integer(summary(aridity)[5]*10)  # value outside raster range
+  out_value = as.integer(summary(aridity)[5]*10)  #***  value outside raster range
   bad_data <- aridity
   
   bad_data[bad_data<low_end] <- out_value
