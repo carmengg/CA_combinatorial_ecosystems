@@ -1,5 +1,5 @@
 ---
-title: "compare_aridity"
+title: "SB_comparing_aridity"
 output: html_document
 ---
 
@@ -35,8 +35,8 @@ arid19 <- raster(here("combine_layers",
                                    paste("sb_arid_match_",year,".tif",sep="")))
 rm(year)
 
-plot(arid8, main= '2008')
-plot(arid19, main='2019')
+plot(arid8, main= 'Santa Barbara aridity regions (2008)')
+plot(arid19, main='Santa Barbara aridity regions (2019)')
 ```
 
 
@@ -47,6 +47,7 @@ plot(arid19, main='2019')
 tic('change_mtx time')
 mtx_arid_8_19 <-change_mtx(arid8, arid19)
 toc()
+# 16 sec
 
 colnames(mtx_arid_8_19) <- c("dry", "moist")
 rownames(mtx_arid_8_19) <- c("dry", "moist")
@@ -85,6 +86,7 @@ tic('raster_change_i (dry_2_other)')
 dry_change <- raster_change_i(rasterA=arid8, i=2, cat_i_name="dry", 
                               rasterB=arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
 toc()
+# 5 sec
 
 plot(dry_change)
 ```
@@ -95,6 +97,7 @@ tic('raster_change_i (moist_2_other)')
 moist_change <- raster_change_i(rasterA=arid8, i=3, cat_i_name="moist", 
                                 rasterB=arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
 toc()
+# 7 sec
 plot(moist_change)
 ```
 
@@ -109,104 +112,6 @@ change_8_to_19 <- raster_change_mtx(arid8, c(2,3), cats_names,
 toc()
 
 plot(change_8_to_19)
-```
-
-
-##  Exploring aridity changes CA, 2008 to 2019
-
-```{r}
-year<- 2008
-ca_arid8 <- raster(here("combine_layers",
-                                   "ca_matched_layers_timeseries",
-                                   "aridity",
-                                   paste("ca_arid_match_",year,".tif",sep="")))
-year<-2019
-ca_arid19 <- raster(here("combine_layers",
-                                   "ca_matched_layers_timeseries",
-                                   "aridity",
-                                   paste("ca_arid_match_",year,".tif",sep="")))
-
-```
-
-```{r}
-# finding number of pixels changing from categories in arid8 to categories in arid19
-tic('ca change_mtx time')
-ca_mtx_arid_8_19 <-change_mtx(ca_arid8, ca_arid19)
-toc()
-# ca change_mtx time: 2840.274 sec elapsed
-```
-
-
-```{r}
-
-cats_names <- c('desert','dry','moist')
-colnames(ca_mtx_arid_8_19) <- cats_names
-rownames(ca_mtx_arid_8_19) <- cats_names
-ca_mtx_arid_8_19
-```
-
-```{r}
-# create oredered data frame from change_mtx
-df_arid_8_19 <-change_df(ca_mtx_arid_8_19, keep_equals = FALSE)
-df_arid_8_19
-```
-
-```{r}
-cats_names <- c('desert','dry','moist')
-tic('raster_change_mtx (california aridity)')
-ca_results <- raster_change_mtx(ca_arid8, c(1,2,3), cats_names,
-                                ca_arid19, c(1,2,3), cats_names)
-toc()
-```
-
-
-```{r}
-ca_results
-plot(ca_results)
-```
-
-```{r}
-# save rasters
-
-# for(i in 1:9){
-#   name <- paste(names(ca_results)[i],".tif",sep="")
-#   writeRaster(ca_results[[i]], here("comparing_individual_layers",
-#                                     "ca_aridity_comparisons",
-#                                     name))  
-# }
-```
-
-### Mapping with CA boundary
-
-```{r}
-ca_shp <- readOGR(here("shapefiles",
-                       "ca-state-boundary",
-                       "CA_State_TIGER2016.shp"))
-
-ca_shp <- spTransform(ca_shp, crs(result_mtx))
-```
-
-```{r}
-names <- names(ca_results)
-
-for (i in 1:9){
-  plot(ca_results[[i]], main=names[i] )
-  plot(ca_shp,add=TRUE)
-}
-
-```
-
-```{r}
-par(mfrow = c(3, 3))
-names <- names(ca_results)
-
-for (i in 1:9){
-  plot(ca_results[[i]], 
-       main=names[i], 
-       axes=FALSE,
-       legend=FALSE)
-  plot(ca_shp,add=TRUE)
-}
 ```
 
 

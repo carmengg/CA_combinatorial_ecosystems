@@ -1,7 +1,8 @@
 ---
-title: "compare_aridity"
+title: "CA_comparing_aridity"
 output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -12,105 +13,9 @@ library(rgdal)
 library(here)
 library(tidyverse)
 library(tictoc)
-```
 
-```{r}
 # library with all the change comparison functions
 source(here("comparing_individual_layers","change_functions.R"))
-```
-
-
-## Exploring aridity changes in SB county, 2008 to 2019
-
-
-```{r}
-# Initial rasters
-year<- 2008
-arid8 <- raster(here("combine_layers",
-                                   "sb_matched_layers_timeseries",
-                                   "aridity",
-                                   paste("sb_arid_match_",year,".tif",sep="")))
-year<-2019
-arid19 <- raster(here("combine_layers",
-                                   "sb_matched_layers_timeseries",
-                                   "aridity",
-                                   paste("sb_arid_match_",year,".tif",sep="")))
-rm(year)
-
-plot(arid8, main= '2008')
-plot(arid19, main='2019')
-```
-
-
-### Counting number of pixels changed
-
-```{r}
-# finding number of pixels changing from categories in arid8 to categories in arid19
-tic('change_mtx time')
-mtx_arid_8_19 <-change_mtx(arid8, arid19)
-toc()
-
-colnames(mtx_arid_8_19) <- c("dry", "moist")
-rownames(mtx_arid_8_19) <- c("dry", "moist")
-mtx_arid_8_19
-```
-
-
-```{r}
-# checking moist_2_dry
-check_moist_2_dry <- arid8
-check_moist_2_dry[check_moist_2_dry!=3] <- NA
-aux <- arid19
-aux[aux != 2] <- NA
-check_moist_2_dry <- check_moist_2_dry * aux
-
-plot(check_moist_2_dry)
-freq(check_moist_2_dry)
-```
-
-
-```{r}
-# create ordered data frame from change_mtx
-df_arid_8_19 <-change_df(mtx_arid_8_19,keep_equals = TRUE)
-df_arid_8_19
-```
-
-### Finding change rasters
-
-```{r}
-# create rasters with the change from category i to cats_B in rasterB
-cats_names <- c('dry','moist')
-cat_i_name = "moist"
-
-# Example 1:
-tic('raster_change_i (dry_2_other)')
-dry_change <- raster_change_i(rasterA=arid8, i=2, cat_i_name="dry", 
-                              rasterB=arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
-toc()
-
-plot(dry_change)
-```
-
-```{r}
-# Example 2:
-tic('raster_change_i (moist_2_other)')
-moist_change <- raster_change_i(rasterA=arid8, i=3, cat_i_name="moist", 
-                                rasterB=arid19, cats_B=c(2,3), cats_names =c('dry','moist') )
-toc()
-plot(moist_change)
-```
-
-
-
-```{r}
-# Generating all change rasters
-
-tic('raster_change_mtx')
-change_8_to_19 <- raster_change_mtx(arid8, c(2,3), cats_names,
-                                arid19, c(2,3), cats_names)
-toc()
-
-plot(change_8_to_19)
 ```
 
 
@@ -135,7 +40,7 @@ ca_arid19 <- raster(here("combine_layers",
 tic('ca change_mtx time')
 ca_mtx_arid_8_19 <-change_mtx(ca_arid8, ca_arid19)
 toc()
-# ca change_mtx time: 2840.274 sec elapsed (~47 mins)
+# ca change_mtx time: 2840.274 sec elapsed
 ```
 
 
