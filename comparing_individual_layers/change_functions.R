@@ -4,15 +4,13 @@
 #library(tidyverse)
 
 #*****************************************************************
-# START COPIED FROM comparing_elu_maps.Rmd
+# START OF COPIED FROM comparing_elu_maps.Rmd
+# ** modified from landcover_comparing_SB.rmd **
 #*****************************************************************
-#
-# -----------------------------------------------------------------------------
+
 
 # see how category i in raster A changes in raster B  
 # B has categories catsB = (b_1,...,b_n)  (b_i < b_(i+1) integers)
-# ** modified from landcover_comparing_SB.rmd **
-
 change_i <- function(rasterA,i, rasterB,catsB){
   change <- rasterA
   change[change!=i] <- NA     # select category A_i
@@ -36,7 +34,6 @@ change_i <- function(rasterA,i, rasterB,catsB){
 # ------------------------------------------------------------------------------------
 # Returns matrix M = (M_ij)
 # M_ij = # pixels changed from category i in rasterA to category j in rasterB
-# ** modified from landcover_comparing_SB.rmd **
 
 change_mtx <- function(rasterA, rasterB){
   
@@ -58,7 +55,9 @@ change_mtx <- function(rasterA, rasterB){
 
 
 # -----------------------------------------------------------------------------
-# ** modified from landcover_comparing_SB.rmd **
+# transforms change_mtx into data frame
+# if keep_equals = TRUE, then it keeps the number of pixels that did not change category (the diagonal of the matrix)
+# if remove_zeros = FALSE, then it keeps entries that did not change from one category to another
 change_df <- function(change_mtx, keep_equals=FALSE, remove_zeros=TRUE){
   
   change_tofrom <- data.frame(matrix(ncol=3,nrow=0, dimnames=list(NULL, c("from", "to", "num_pixels"))))
@@ -100,7 +99,7 @@ change_df <- function(change_mtx, keep_equals=FALSE, remove_zeros=TRUE){
 
 
 #*****************************************************************
-# END COPIED FROM comparing_elu_maps.Rmd
+# END OF COPIED FROM comparing_elu_maps.Rmd
 #*****************************************************************
 # -----------------------------------------------------------------------------
 
