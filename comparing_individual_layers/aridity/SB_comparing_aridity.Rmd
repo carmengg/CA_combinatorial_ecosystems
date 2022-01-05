@@ -114,4 +114,28 @@ toc()
 plot(change_8_to_19)
 ```
 
+```{r}
+# Plotting with SB county boundary
+
+sb_shp <- readOGR(here("shapefiles",
+                       "sb-county-boundary",
+                       "data",
+                       "commondata",
+                       "county_boundaries",
+                       "SB_only.shp"))
+
+sb_shp <- spTransform(sb_shp, crs(change_8_to_19))
+
+
+par(mfrow = c(2, 2))
+names <- names(change_8_to_19)
+
+for (i in 1:4){
+  plot(change_8_to_19[[i]], 
+       main=names[i], 
+       axes=FALSE,
+       legend=FALSE)
+  plot(sb_shp,add=TRUE)
+}
+```
 
