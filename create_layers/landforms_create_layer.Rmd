@@ -11,34 +11,30 @@ library(rgdal)
 library(sf)
 library(here)
 #library(tidyverse)
+
+source(here("create_layers","layer_processing.R"))
 ```
 
 
 ```{r}
-# ---- prep functions ----
+# ----- Wolrd Landform raster
+GDALinfo(here("raw_data",
+              "GlobalMountainsK3Classes",
+              "k3classes.tif"))
+k3_mountains <- raster(here("raw_data",
+              "GlobalMountainsK3Classes",
+              "k3classes.tif"))
 
-crop_shape <- function(ref_raster , shape){
-  new_shape <- spTransform(shape, crs(ref_raster))
-  return(mask(crop(x= ref_raster, y=st_bbox(new_shape)),new_shape))
-}
-
-landform_regions <- function(landform_rast){
-  thresh<- matrix(c(26,1,
-                    27,2,
-                    31,3,
-                    32,4), nrow=4,byrow=TRUE)
-  return(reclassify(landforms,thresh))
-}
-
-```
-
-
-```{r}
 #----- CA shapefile ------
 ca_shp <- readOGR(here("shapefiles",
                        "ca-state-boundary",
                        "CA_State_TIGER2016.shp"))
 
+ca_k3 <- crop_shape(k3_mountains,ca_shp)
+ca_landform <- landform_regions(ca_k3)
+
+plot(ca_landform, main="CA landforms (2017)")
+# read about plotting categorical rasters
 
 ```
 

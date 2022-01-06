@@ -3,10 +3,12 @@
 # - land cover
 # - biomass
 # - aridity index
-# - temperature
+# - temperature (climate)
+# - landforms
 
 #########################################################
 
+# libraries needed:
 
 # library(raster)
 # library(rgdal)
@@ -361,4 +363,17 @@ climate_and_regions <- function(year,n,bbox){
   result <- addLayer(result, temp_regions(result[[1]],months_weather))
   
   return(result)
+}
+
+
+#########################################################
+#                     LANDFORMS
+#########################################################
+
+landform_regions <- function(landform_rast){
+  thresh<- matrix(c(26,1,
+                    27,2,
+                    31,4,
+                    32,3), nrow=4,byrow=TRUE)
+  return(reclassify(landform_rast,thresh))
 }
