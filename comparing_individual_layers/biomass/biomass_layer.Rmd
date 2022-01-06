@@ -32,17 +32,39 @@ lc_2019 <- raster(paste(root,"2019.tif",sep=""))
 plot(lc_2008, main= "CA land cover (2008)")
 plot(lc_2019, main= "CA land cover (2019)")
 
-biom8 <- biomass_regions(lc_2008)
-biom19 <- biomass_regions(lc_2019)
+# -------------------------------------------------
+# create CA biomass regions
 
-writeRaster(biom19, here("comparing_individual_layers",
-                  "biomass",
-                  "ca_biomass_20019.tif"))
+#biom8 <- biomass_regions(lc_2008)
+#biom19 <- biomass_regions(lc_2019)
 
-writeRaster(biom8, here("comparing_individual_layers",
-                  "biomass",
-                  "ca_biomass_2008.tif"))
+# writeRaster(biom19, here("combine_layers",
+#                    "CA_matched_layers_timeseries",
+#                   "biomass",
+#                   "ca_biomass_20019.tif"))
+# 
+# writeRaster(biom8, here("combine_layers",
+#                    "CA_matched_layers_timeseries",  
+#                   "biomass",
+#                   "ca_biomass_2008.tif"))
 ```
+
+```{r}
+# plot biomass regions
+
+biom8 <- raster(here("combine_layers",
+     "CA_matched_layers_timeseries",  
+     "biomass",
+     "ca_biomass_2008.tif"))
+biom19 <- raster(here("combine_layers",
+     "CA_matched_layers_timeseries",  
+     "biomass",
+     "ca_biomass_2019.tif"))
+
+plot(biom8, main= "CA biomass regions (2008)")
+plot(biom19, main= "CA biomass regions (2019)")
+```
+
 
 ## Remove urban areas
 

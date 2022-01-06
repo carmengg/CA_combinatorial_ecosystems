@@ -14,9 +14,6 @@ library(here)
 library(tidyverse)
 library(janitor)
 
-
-# library with all the change comparison functions
-source(here("comparing_individual_layers","change_functions.R"))
 ```
 
 ```{r}
@@ -94,6 +91,9 @@ fire_subset <- function(fires,from,to){
     filter(from <= year, year <= to)
   return(subset)
 }
+
+
+# -------------------------------------------------------------
 
 plot_bio_chng_fires <- function(change, 
                                 change_df, yr1, yr2, 
