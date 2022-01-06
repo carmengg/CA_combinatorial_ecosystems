@@ -21,13 +21,14 @@ library(janitor)
 # -------------------------------------------------------------
 # open biomass layers
 path <- here(
-  "comparing_individual_layers",
+  "combine_layers",
+  "SB_matched_layers_timeseries",
   "biomass",
-  "biomass")
+  "sb_biomass_")
 
-biom1<- raster(paste(path,"_2001.tif", sep=""))
-biom8<- raster(paste(path,"_2008.tif", sep=""))
-biom19<- raster(paste(path,"_2019.tif", sep=""))
+biom1<- raster(paste(path,"2001.tif", sep=""))
+biom8<- raster(paste(path,"2008.tif", sep=""))
+biom19<- raster(paste(path,"2019.tif", sep=""))
 
 # -------------------------------------------------------------
 # read in fire perimeters geometries
@@ -70,7 +71,11 @@ rm(path)
 ```{r}
 # -------------------------------------------------------------
 
-# returns data frame
+# compares change between rast1 and rast2
+# change = 1 : return points where biomass increased from rast1 to rast2
+# change = 0 : return points where biomass remained the same from rast1 to rast2
+# change = -1 : return points where biomass decreased from rast1 to rast2
+# returns result as a data frame (for ploting)
 bio_change <- function(rast1, rast2, change){
   change_rast <- rast2 - rast1
   if(change == 1){
@@ -94,7 +99,15 @@ fire_subset <- function(fires,from,to){
 
 
 # -------------------------------------------------------------
-
+# generates a plot comparing selected change in biomass from yr1 to yr2 and 
+# adds the fire perimeters
+# parameters for plot title:
+#   change = 1 (increase), 0 (stable) or -1 (decrease), 
+#   yr1, yr2 = years of the rasters being compared
+# change_df = data frame with the raster to be plotted (coming from bio_change function)
+# shapefiles:
+#   sb_shp = santa barbara shapefile, CRS matches data frame
+#   fires = shapefiles of fire perimeters to be added
 plot_bio_chng_fires <- function(change, 
                                 change_df, yr1, yr2, 
                                 fires,
@@ -109,7 +122,7 @@ plot_bio_chng_fires <- function(change,
   graph <- ggplot() +
     geom_raster(data = change_df, aes(x = x, y = y), fill="gray50")+
     geom_sf(data=sb_shp, alpha=0, color="black")+
-    geom_sf(data = fires, alpha=0.2, aes(color = year, fill=year), size = 0.3) +
+    geom_sf(data=fires, alpha=0.2, aes(color = year, fill=year), size = 0.3) +
     labs(title = title)+
     theme_bw()
   
