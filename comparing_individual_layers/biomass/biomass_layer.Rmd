@@ -16,10 +16,10 @@ library(leaflet)
 
 # library with all the change comparison functions
 source(here("comparing_individual_layers","change_functions.R"))
-
 source(here("layer_processing.R"))
 ```
 
+## Create biomass regions for CA from land cover 
 
 ```{r}
 root <- here("combine_layers",
@@ -29,8 +29,8 @@ root <- here("combine_layers",
 lc_2008 <- raster(paste(root,"2008.tif",sep=""))
 lc_2019 <- raster(paste(root,"2019.tif",sep=""))
 
-#plot(lc_2008, main= "2008")
-#plot(lc_2019, main="2019")
+plot(lc_2008, main= "CA land cover (2008)")
+plot(lc_2019, main= "CA land cover (2019)")
 
 biom8 <- biomass_regions(lc_2008)
 biom19 <- biomass_regions(lc_2019)
@@ -44,6 +44,7 @@ writeRaster(biom8, here("comparing_individual_layers",
                   "ca_biomass_2008.tif"))
 ```
 
+## Remove urban areas
 
 ```{r}
 wo_urban_19<- biom19
@@ -61,6 +62,8 @@ writeRaster(wo_urban_19, here("comparing_individual_layers",
                   "wo_urban_19.tif"))
 ```
 
+
+## SB biomass regions (2001,2008, 2019)
 
 ```{r}
 root <- here("combine_layers",
@@ -101,27 +104,32 @@ plot(biom8, main= "2008")
 plot(biom19, main = "2019")
 ```
 
+
+## SB biomass regions comparisons
+
 ```{r}
+# biomass change 2001 to 2008
+biom_cats <- c('developed','barren','grass','shrub','forest')
+
 biom_chg_mtx_1_to_8 <- change_mtx(biom1,biom8)
 colnames(biom_chg_mtx_1_to_8) <- biom_cats
 rownames(biom_chg_mtx_1_to_8) <- biom_cats
 biom_chg_mtx_1_to_8
 ```
 
-
 ```{r}
 change_df(biom_chg_mtx_1_to_8)
 ```
 
+
 ```{r}
-biom_cats <- c('developed','barren','grass','shrub','forest')
+# biomass change 2008 to 2019
 
 biom_chg_mtx_8_to_19 <- change_mtx(biom8,biom19)
 colnames(biom_chg_mtx_8_to_19) <- biom_cats
 rownames(biom_chg_mtx_8_to_19) <- biom_cats
 biom_chg_mtx_8_to_19
 ```
-
 
 ```{r}
 change_df(biom_chg_mtx_8_to_19)
@@ -136,6 +144,8 @@ change_df(biom_chg_mtx_8_to_19)
 # plot(biom_change)
 ```
 
+
+## Leaflet map of biomass change 2008 to 2019
 
 ```{r}
 # biom_diff <- biom19 - biom8
