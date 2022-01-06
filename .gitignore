@@ -10,7 +10,7 @@ ca_subsets/
 combine_layers/ca_matched_layers_timeseries/
 combine_layers/sb_matched_layers_timeseries/
 combine_layers/elu_*.tif
-combine_layers/elu_SB
+combine_layers/*_elu
 comparing_individual_layers/aridity/ca_aridity_comparisons/
 comparing_individual_layers/climate
 comparing_individual_layers/biomass/*.tif
